@@ -7,6 +7,10 @@
 // http://www.boost.org/LICENSE_1_0.txt)
 //=======================================================================
 
+#include <boost/graph/graph_concepts.hpp>
+#include <boost/graph/graphviz.hpp>
+#include <boost/serialization/utility.hpp>
+
 #include <boost/graph/directed_graph.hpp> // A subclass to provide reasonable arguments to adjacency_list for a typical directed graph
 
 int main(int,char*[])
@@ -23,7 +27,8 @@ int main(int,char*[])
   g.add_edge(v0, v1);
 
     // testing
-    const int nedges = sizeof(used_by)/sizeof(Edge);
+    //const int nedges = sizeof(used_by)/sizeof(Edge);
+    const int nedges = 
     int weights[nedges];
     std::fill(weights, weights + nedges, 1);
 
@@ -33,7 +38,7 @@ int main(int,char*[])
       property< vertex_color_t, default_color_type >,
       property< edge_weight_t, int >
     > Graph;
-    Graph g(used_by, used_by + nedges, weights, N);
+    Graph g(used_by, used_by + nedges, weights, 2);
 
     write_graphviz(std::cout, g, make_label_writer(name));
 
