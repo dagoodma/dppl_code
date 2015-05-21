@@ -1,0 +1,9 @@
+# Do not track files with the following extensions
+*.m~
+.DS_Store
+~*.tmp
+*~
+~$*
+*.swp
+*.swo
+build*
