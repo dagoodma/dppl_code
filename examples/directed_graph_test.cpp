@@ -13,34 +13,26 @@
 
 #include <boost/graph/directed_graph.hpp> // A subclass to provide reasonable arguments to adjacency_list for a typical directed graph
 
+#include <boost/graph/graph_traits.hpp>
+
+using namespace boost;
+
 int main(int,char*[])
 {
   // directed_graph is a subclass of adjacency_list which gives you object oriented access to functions
   // like add_vertex and add_edge, which makes the code easier to understand. However, it hard codes many
   // of the template parameters, so it is much less flexible.
 
-  typedef boost::directed_graph<> Graph;
+  typedef boost::property<boost::edge_weight_t, double> EdgeWeightProperty;
+  typedef boost::directed_graph<boost::no_property, EdgeWeightProperty> Graph;
   Graph g;
   boost::graph_traits<Graph>::vertex_descriptor v0 = g.add_vertex();
   boost::graph_traits<Graph>::vertex_descriptor v1 = g.add_vertex();
 
-  g.add_edge(v0, v1);
+    EdgeWeightProperty ew = 3.1;   
+  g.add_edge(v0, v1, ew);
 
-    // testing
-    //const int nedges = sizeof(used_by)/sizeof(Edge);
-    const int nedges = 
-    int weights[nedges];
-    std::fill(weights, weights + nedges, 1);
-
-    using namespace boost;
-
-    typedef adjacency_list< vecS, vecS, directedS,
-      property< vertex_color_t, default_color_type >,
-      property< edge_weight_t, int >
-    > Graph;
-    Graph g(used_by, used_by + nedges, weights, 2);
-
-    write_graphviz(std::cout, g, make_label_writer(name));
+  write_graphviz(std::cout, g, make_label_writer(get(&Edge::weight, g)));
 
   return 0;
 }
