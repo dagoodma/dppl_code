@@ -17,20 +17,17 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
-#include <vector>
-#include <math.h>
-
 #include <ogdf/basic/Graph.h>
 #include <ogdf/basic/GraphAttributes.h>
-#include <ogdf/basic/GraphCopyAttributes.h>
 #include <ogdf/fileformats/GraphIO.h>
 
 #include "Log.h"
 #include "Dubins.h"
-
+#include "Util.h"
 
 #define DEBUG
 
+// Enable stack traces in debug mode
 #ifdef DEBUG
 #include "stacktrace.h"
 #endif
@@ -38,30 +35,6 @@ THE SOFTWARE.
 using namespace ogdf;
 using namespace std;
 
-
-// Prototypes
-double solveETSPNearestNeighbor(Graph &G, GraphAttributes &GA, configuration_t C_sart, configuration_t C_end, List<node> &tour);
-void printGraph(Graph &G, GraphAttributes &GA);
-void printGraph(Graph &G, GraphCopyAttributes &GA);
-
-/**
- * Find the node nearest to the configuration using the Euclidean distance metric.
- */
-double findNearestNode(GraphCopy &GC, GraphAttributes &GA, configuration_t &C, node &vC) {
-    double minDist = -1.0f;
-    node iC;
-    forall_nodes(iC,GC) {
-        node i = GC.original(iC);
-        double dist = euclideanDistanceToNode(GA, C, i);
-        if (minDist < 0.0f || dist < minDist) {
-            vC = iC;
-            minDist = dist;
-        }
-    }
-
-    return minDist;
-}
-    
 int main(int argc, char *argv[]) {
     // Setup stack traces for debugging
     char const *program_name = argv[0];
@@ -84,8 +57,6 @@ int main(int argc, char *argv[]) {
 
     // Read input gml file
     Graph G;
-    //GraphAttributes GA(G, GraphAttributes::nodeGraphics | GraphAttributes::edgeGraphics
-    //    | GraphAttributes::nodeId | GraphAttributes::edgeDoubleWeight | GraphAttributes::nodeType );
     GraphAttributes GA(G,
       GraphAttributes::nodeGraphics |
       GraphAttributes::edgeGraphics |
@@ -104,9 +75,6 @@ int main(int argc, char *argv[]) {
     int n = G.numberOfNodes();
     FILE_LOG(logDEBUG) << "Opened " << pFilename << ". Found " << m << " edges, and "
         << n << " nodes." << endl;
-
-    //cout << "First node " << GA.idNode(G.firstNode()) << " at: " << GA.x(G.firstNode()) 
-    //    << "," << GA.y(G.firstNode()) << "." << endl;
 
     // Set start and end positions
     configuration_t C_start, C_end;
@@ -137,22 +105,20 @@ int main(int argc, char *argv[]) {
 }
 
 
-//double solveETSPArora()
-
 /**
  * Solves the Euclidean Traveling Salesperson problem using the Nearest Neighbor algorithm.
  */
 double solveETSPNearestNeighbor(Graph &G, GraphAttributes &GA, configuration_t C_start, configuration_t C_end, List<node> &tour) {
     double minCost = 0.0f;
     GraphCopy GC(G); // unvisited nodes
-    //GraphCopyAttributes GA_v = GraphCopyAttributes(G_v, GA);
 
     configuration_t C;
     copyConfiguration(C_start, C);
 
+    #ifdef DEBUG
     printGraph(G, GA);
+    #endif
 
-    //NodeArray<bool> visit(G); // nodes visited
     while (!GC.empty()) {
         node vC;
         minCost += findNearestNode(GC, GA, C, vC);
@@ -171,13 +137,3 @@ double solveETSPNearestNeighbor(Graph &G, GraphAttributes &GA, configuration_t C
     return minCost;
 }
 
-void printGraph(Graph &G, GraphAttributes &GA) {
-    cout << "Graph 0x" << &G << " with " << G.numberOfNodes() << " nodes and "
-         << G.numberOfEdges() << " edges:" << endl;
-
-    node u;
-    forall_nodes(u,G) {
-        cout << "   Node " << GA.idNode(u) << " at (" << GA.x(u) << ", " << GA.y(u) << ")." << endl;
-    }
-}
- 

@@ -27,12 +27,14 @@ include_directories( include )
 
 ## Build and Link Executables
 
-ADD_EXECUTABLE( main src/main.cpp src/Dubins.cpp )
+ADD_EXECUTABLE( nearestNeighborETSP src/nearestNeighborETSP.cpp )
+#ADD_EXECUTABLE( computeDubinsDistancesATSP src/computeDubinsDistancesATSP.cpp src/Dubins.cpp )
 
 ## OSX
 add_definitions("-fno-pie")
 
-TARGET_LINK_LIBRARIES( main OGDF COIN )
+TARGET_LINK_LIBRARIES( nearestNeighborETSP OGDF COIN )
+#TARGET_LINK_LIBRARIES( computeDubinsDistancesATSP OGDF COIN )
 
 # the compiler used for C files 
 MESSAGE( STATUS "CMAKE_C_COMPILER: " ${CMAKE_C_COMPILER} )

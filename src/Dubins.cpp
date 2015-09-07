@@ -20,17 +20,6 @@ THE SOFTWARE.
 #include "Dubins.h"
 
 /**
- * Calculate euclidean distance from the configuration to the node.
- */
-double euclideanDistanceToNode(ogdf::GraphAttributes &GA, configuration_t &C, ogdf::node &node) {
-    double x = GA.x(node);
-    double y = GA.y(node);
-    ogdf::DPoint uPoint = ogdf::DPoint(x,y);
-    return C.position.distance(uPoint);
-    //return sqrt(pow(u_x - v_x,2) + pow(u_y - v_y,2));
-}
-
-/**
  * Calculate the shortest Dubins' path distance to the node.
  */
 double dubinsDistanceToNode(ogdf::GraphAttributes &GA, configuration_t &C, ogdf::node &node) {
