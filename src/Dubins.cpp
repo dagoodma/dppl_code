@@ -37,3 +37,10 @@ double dubinsDistanceToNode(ogdf::GraphAttributes &GA, configuration_t &C, ogdf:
     return 0.0f;
 }
 
+/**
+ * Compute the Dubins' path langth (shortest path with limited turn radius) between
+ * two configurations.
+ */
+double computeDubinsPathLength(configuration_t &C_Start, configuration_t &C_end, double turnRadius) {
+}
+
