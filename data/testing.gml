@@ -1,40 +1,40 @@
 graph [
- id 0
- version 0
- graphics [
- ]
- LabelGraphics [
- ]
- node [
-  id 1
-  label "1"
+  id 0
+  version 0
   graphics [
-   x 90000
-   y 0
-   type "oval"
   ]
   LabelGraphics [
-   type "text"
   ]
- ]
- node [
-  id 2
-  label "2"
-  graphics [
-   x 150000
-   y 0
-   type "oval"
+  node [
+    id 1
+    label "1"
+    graphics [
+      x 90000.0
+      y 0.0
+      type "oval"
+    ]
+    LabelGraphics [
+      type "text"
+    ]
   ]
-  LabelGraphics [
-   type "text"
-  ]
+  node [
+    id 2
+    label "2"
+    graphics [
+      x 150000.0
+      y 0.0
+      type "oval"
+    ]
+    LabelGraphics [
+      type "text"
+    ]
  ]
  node [
   id 3
   label "3"
   graphics [
-   x 210000
-   y 0
+   x 210000.0
+   y 0.0
    type "oval"
   ]
   LabelGraphics [
@@ -45,8 +45,8 @@ graph [
   id 4
   label "4"
   graphics [
-   x 270000
-   y 0
+   x 270000.0
+   y 0.0
    type "oval"
   ]
   LabelGraphics [
@@ -57,8 +57,8 @@ graph [
   id 5
   label "5"
   graphics [
-   x 90000
-   y -60000
+   x 90000.0
+   y -60000.0
    type "oval"
   ]
   LabelGraphics [

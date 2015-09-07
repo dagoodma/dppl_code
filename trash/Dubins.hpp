@@ -1,9 +1,4 @@
-#include <vector>
-#include <math.h>
-
 #include <ogdf/basic/Graph.h>
-#include <ogdf/basic/GraphAttributes.h>
-#include <ogdf/basic/GraphCopyAttributes.h>
 
 typedef struct _configuration_t {
     ogdf::DPoint position; // (x,y) position [m]
@@ -19,7 +14,7 @@ inline void copyConfiguration(configuration_t &u, configuration_t &v) {
     v.heading = u.heading;
 }
 
-double euclideanDistanceToNode(ogdf::GraphAttributes &GA, configuration_t &C, ogdf::node &node);
+double euclideanDistanceToNode(ogdf::Graph G, ogdf::GraphCopyAttributes GA, configuration_t C, ogdf::node node);
 
-double dubinsDistanceToNode(ogdf::GraphAttributes &GA, configuration_t &C, ogdf::node &node);
+double dubinsDistanceToNode(ogdf::Graph G, ogdf::GraphCopyAttributes GA, configuration_t C, ogdf::node node);
 

@@ -29,6 +29,9 @@ include_directories( include )
 
 ADD_EXECUTABLE( main src/main.cpp src/Dubins.cpp )
 
+## OSX
+add_definitions("-fno-pie")
+
 TARGET_LINK_LIBRARIES( main OGDF COIN )
 
 # the compiler used for C files 

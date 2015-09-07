@@ -17,19 +17,12 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
-#include <vector>
-#include <math.h>
-
-#include <ogdf/basic/GraphAttributes.h>
-#include <ogdf/fileformats/GraphIO.h>
-
 #include "Dubins.h"
-
 
 /**
  * Calculate euclidean distance from the configuration to the node.
  */
-double euclideanDistanceToNode(ogdf::Graph G, ogdf::GraphAttributes GA, configuration_t C, ogdf::node node) {
+double euclideanDistanceToNode(ogdf::GraphAttributes &GA, configuration_t &C, ogdf::node &node) {
     double x = GA.x(node);
     double y = GA.y(node);
     ogdf::DPoint uPoint = ogdf::DPoint(x,y);
@@ -40,7 +33,7 @@ double euclideanDistanceToNode(ogdf::Graph G, ogdf::GraphAttributes GA, configur
 /**
  * Calculate the shortest Dubins' path distance to the node.
  */
-double dubinsDistanceToNode(ogdf::Graph G, ogdf::GraphAttributes GA, configuration_t C, ogdf::node node) {
+double dubinsDistanceToNode(ogdf::GraphAttributes &GA, configuration_t &C, ogdf::node &node) {
     return 0.0f;
 }
 
