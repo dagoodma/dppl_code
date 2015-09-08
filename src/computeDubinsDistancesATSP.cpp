@@ -27,6 +27,7 @@ THE SOFTWARE.
 #include "Dubins.h"
 #include "Configuration.h"
 #include "Util.h"
+#include "NodeMatrix.h"
 
 #define DEBUG
 
@@ -35,7 +36,9 @@ THE SOFTWARE.
 #include "stacktrace.h"
 #endif
 
-#define DEFEAULT_TURN_RADIUS    300.0f // [m]
+#define DEFAULT_TURN_RADIUS    10.0 // [m]
+
+#define MAX_EDGE_COST           999999.0
  
 using namespace std;
 
@@ -49,11 +52,10 @@ using ogdf::List;
 using ogdf::ListIterator;
 using ogdf::NodeArray;
 
-template <class T, size_t ROW, size_t COL<
-    using NodeMatrix = NodeArray<NodeArray<T,COL>, ROW>;
-
-void buildDubinsAdjacencyMatrix(Graph &G, GraphAttributes &GA, NodeMatrix<double> A,
-    NodeArray<double> X, double turnRadius);
+void buildDubinsAdjacencyMatrix(Graph &G, GraphAttributes &GA, NodeMatrix<double> &A,
+    NodeArray<double> &X, double turnRadius);
+int writeATSPFile(std::string filename, std::string name, std::string comment,
+    Graph &G, NodeMatrix<double> &A);
 
 /**
  * Writes Dubins edge distances to a TSPLIB-style problem file (.tsp).
@@ -89,7 +91,7 @@ int main(int argc, char *argv[]) {
       GraphAttributes::nodeTemplate |
       GraphAttributes::nodeId); 
     
-    if (!GraphIO::readGML(GA, G, pFilename)) {
+    if (!ogdf::GraphIO::readGML(GA, G, pFilename)) {
         cerr << "Could not open " << pFilename << endl;
         return 1;
     }
@@ -100,9 +102,13 @@ int main(int argc, char *argv[]) {
         << n << " nodes." << endl;
  
     // Build Dubins' weighted adjacency matrix
-    NodeMatrix<double, n, n> A;
-    NodeArray<double, n> heading; // (TODO: randomize) 
-    buildDubinsAdjancencyMatrix(G, GA, A, heading, DEFAULT_TURN_RADIUS);
+    //cout << "Here at line " << __LINE__ << " in file " << __FILE__ << "." << endl;
+    NodeMatrix<double> A(G);
+    NodeArray<double> heading(G,0.0); // (TODO: randomize) 
+    buildDubinsAdjacencyMatrix(G, GA, A, heading, DEFAULT_TURN_RADIUS);
+
+    node v = G.firstNode();
+    //cout << "At node v: " << A[v][v] << "." << endl;
 
     // Find nearest neighbor solution
     FILE_LOG(logDEBUG) << "Starting Dubins' adjacency matrix computation." << endl;
@@ -110,7 +116,47 @@ int main(int argc, char *argv[]) {
     cout << "Computed weighted adjacency matrix." << endl;
 
     // Write solution to .tsp file
+    writeATSPFile(string("prDubins1.tsp"), string("dubins1-5pt"),
+        string("Dubins' path for 5 points"), G, A);
         
+    return 0;
+}
+
+int writeATSPFile(std::string filename, std::string name, std::string comment, 
+    Graph &G, NodeMatrix<double> &A) {
+    ofstream tspFile;
+    tspFile.open(filename);
+    if (!tspFile.is_open()) {
+        cerr << "Could not open " << filename << endl;
+        return 1;
+    }
+
+    // Find largest number of digits
+    int nDigits = 12; // eg. 3.14159e+000, 2.00600e+003
+    int n = A.numberOfNodes();
+    //cout << "HERE at line " << __LINE__ << " in file " << __FILE__ << "." << endl;
+
+    tspFile << 
+        "NAME: " << name << endl << 
+        "TYPE: ATSP" << endl <<
+        "COMMENT:" << comment << endl <<
+        "DIMENSION: " << n <<  endl <<
+        "EDGE_WEIGHT_TYPE: EXPLICIT" << endl <<
+        "EDGE_WEIGHT_FORMAT: FULL_MATRIX" << endl <<
+        "EDGE_WEIGHT_SECTION" << endl << fixed;
+    tspFile.precision(0); 
+
+    node i, j;
+    //Graph G = *A.graphOf();
+    forall_nodes(i, G) {
+        forall_nodes(j, G) {
+            tspFile << " " << A[i][j];
+        }
+        tspFile << endl;
+    }
+
+    tspFile << "EOF";
+    tspFile.close();
     return 0;
 }
 
@@ -118,9 +164,23 @@ int main(int argc, char *argv[]) {
 /**
  * Computes an adjacency matrix of Dubins path lengths between nodes for ATSP.
  */
-void buildDubinsAdjacencyMatrix(Graph &G, GraphAttributes &GA, NodeMatrix<double> A,
-    NodeArray<double> X, double turnRadius) {
+void buildDubinsAdjacencyMatrix(Graph &G, GraphAttributes &GA, NodeMatrix<double> &A,
+    NodeArray<double> &X, double turnRadius) {
   
-   
+    node i, j;
+    forall_nodes(i, G) {
+        Configuration Ci(GA.x(i), GA.y(i), X(i));
+
+        forall_nodes(j, G) {
+            if (i == j) {
+                A[i][i] = MAX_EDGE_COST;
+                continue;
+            }
+            Configuration Cj(GA.x(j), GA.y(j), X(j));
+            
+            double w = dubinsPathLength(Ci, Cj, turnRadius);
+            A[i][j] = w;
+        }
+    }
 }
 

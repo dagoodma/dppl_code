@@ -10,6 +10,6 @@
 #include "Configuration.h"
 
 // Prototypes
-double dubinsDistanceToNode(ogdf::GraphAttributes &GA, Configuration &C, ogdf::node &node);
+double dubinsPathLength(Configuration &Cs, Configuration &Ce, double r);
 
 #endif // _DUBINS_H_

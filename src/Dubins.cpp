@@ -17,19 +17,82 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
+#include <math.h>
+#include <stdio.h>
+#include <algorithm>
+#include <Eigen/Dense>
+
+using Eigen::Vector3d;
+using Eigen::Vector2d;
+
 #include "Dubins.h"
 
 /**
  * Calculate the shortest Dubins' path distance to the node.
  */
-double dubinsDistanceToNode(ogdf::GraphAttributes &GA, Configuration &C, ogdf::node &node) {
-    return 0.0f;
+double dubinsPathLength(Configuration &Cs, Configuration &Ce, double r) {
+    //cout << "Checking Cs=" << Cs << ", Ce=" << Ce << "." << endl;
+    Vector2d Ps = Vector2d(Cs.x(), Cs.y()),
+        Pe = Vector2d(Ce.x(), Ce.y());
+    double Xs = Cs.m_heading,
+        Xe = Ce.m_heading;
+
+    double dist = (Ps - Pe).norm();
+
+    //cout << "Got dist=" << dist << " compared to r=" << r << "." << endl;
+
+    if (dist < 3.0 * r) {
+        std::cerr << "distance must be larger than 3*r" << endl;
+        return -1.0;
+    }
+
+    // Convert theta units??
+
+    // Find circle center points for each case
+    Vector3d DCs_r(cos(Xs - M_PI/2.0), sin(Xs - M_PI/2.0), 0.0),
+        DCs_l(cos(Xs + M_PI/2.0), sin(Xs - M_PI/2.0), 0.0),
+        DCe_r(cos(Xe - M_PI/2.0), sin(Xe - M_PI/2.0), 0.0),
+        DCe_l(cos(Xe + M_PI/2.0), sin(Xe + M_PI/2.0), 0.0);
+
+    Vector3d PCs_r(Cs.x() + r * DCs_r[0], Cs.y() + r * DCs_r[1], 0.0),
+        PCs_l(Cs.x() + r * DCs_l[0], Cs.y() + r * DCs_l[1], 0.0),
+        PCe_r(Ce.x() + r * DCs_r[0], Ce.y() + r * DCs_r[1], 0.0),
+        PCe_l(Ce.x() + r * DCs_l[0], Ce.y() + r * DCs_l[1], 0.0);
+
+    // Case I, R-S-R
+    double x = angleBetween(PCs_r, PCe_r);
+    double L1 = (PCs_r - PCe_r).norm() + r*wrapAngle(2.0 * M_PI + wrapAngle(x - M_PI/2.0)
+        - wrapAngle(Xs - M_PI/2.0)) + r*wrapAngle(2.0*M_PI + wrapAngle(Xe - M_PI/2.0)
+        - wrapAngle(x - M_PI/2.0));
+
+    // Case II, R-S-L
+    double ls = (PCe_l - PCs_r).norm();
+    x = angleBetween(PCs_r, PCe_l);
+    double x2 = x - M_PI/2.0 + asin(2.0*r/ls);
+    double L2 = sqrt(ls*ls - 4*r*r) + r*wrapAngle(2.0*M_PI + wrapAngle(x2)
+        - wrapAngle(Xs - M_PI/2.0)) + r*wrapAngle(2.0*M_PI + wrapAngle(x2 + M_PI)
+        - wrapAngle(Xe + M_PI/2.0));
+
+    // Case III, L-S-R
+    ls = (PCe_r - PCs_l).norm();
+    x = angleBetween(PCs_l, PCe_r);
+    x2 = acos(2.0*r/ls);
+    if (2.0*r/ls > 1.0 || 2.0*r/ls < -1.0) {
+        std::cerr << "angle out of range in case III" << endl;
+        return -1.0;
+    }
+    double L3 = sqrt(ls*ls - 4*r*r) + r*wrapAngle(2.0*M_PI + wrapAngle(Xs + M_PI/2.0) 
+        - wrapAngle(x + x2)) + r*wrapAngle(2.0*M_PI + wrapAngle(Xe - M_PI/2.0)
+        - wrapAngle(x + x2 - M_PI));
+
+    
+    // Case IV, L-S-L
+    double L4 = (PCs_l - PCe_l).norm() + r*wrapAngle(2.0*M_PI + wrapAngle(Xs + M_PI/2.0)
+        - wrapAngle(x + M_PI/2.0)) + r*wrapAngle(2.0*M_PI + wrapAngle(x + M_PI/2.0)
+        - wrapAngle(Xe + M_PI/2.0));
+
+
+    return std::min({L1, L2, L3, L4});
 }
 
-/**
- * Compute the Dubins' path langth (shortest path with limited turn radius) between
- * two configurations.
- */
-double computeDubinsPathLength(Configuration &C_Start, Configuration &C_end, double turnRadius) {
-}
 
