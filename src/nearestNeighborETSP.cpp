@@ -25,6 +25,7 @@ THE SOFTWARE.
 
 #include "Log.h"
 #include "Dubins.h"
+#include "Configuration.h"
 #include "Util.h"
 
 #define DEBUG
@@ -34,18 +35,27 @@ THE SOFTWARE.
 #include "stacktrace.h"
 #endif
  
-using namespace ogdf;
 using namespace std;
+
+// Have to import specifially, since Configuration clashes
+using ogdf::node;
+using ogdf::Graph;
+using ogdf::GraphAttributes;
+using ogdf::GraphCopy;
+using ogdf::DPoint;
+using ogdf::List;
+using ogdf::ListIterator;
 
 
 // Prototypes
-double solveETSPNearestNeighbor(Graph &G, GraphAttributes &GA, configuration_t C_sart, configuration_t C_end, List<node> &tour);
-double euclideanDistanceToNode(ogdf::GraphAttributes &GA, configuration_t &C, ogdf::node &node);
+double euclideanDistanceToNode(GraphAttributes &GA, Configuration &C, node &node);
+double solveETSPNearestNeighbor(Graph &G, GraphAttributes &GA, Configuration &C_start,
+    Configuration &C_end, List<node> &tour);
 
 /**
  * Find the copied node vC nearest to C using the Euclidean distance metric.
  */
-double findNearestNode(GraphCopy &GC, GraphAttributes &GA, configuration_t &C, node &vC) {
+double findNearestNode(GraphCopy &GC, GraphAttributes &GA, Configuration &C, node &vC) {
     double minDist = -1.0f;
     node iC;
     forall_nodes(iC,GC) {
@@ -63,11 +73,9 @@ double findNearestNode(GraphCopy &GC, GraphAttributes &GA, configuration_t &C, n
 /**
  * Calculate euclidean distance from C to the node.
  */
-double euclideanDistanceToNode(ogdf::GraphAttributes &GA, configuration_t &C, ogdf::node &node) {
-    double x = GA.x(node);
-    double y = GA.y(node);
-    ogdf::DPoint uPoint = ogdf::DPoint(x,y);
-    return C.position.distance(uPoint);
+double euclideanDistanceToNode(GraphAttributes &GA, Configuration &C, node &node) {
+    DPoint uPoint = DPoint(GA.x(node), GA.y(node));
+    return C.m_position.distance(uPoint);
     //return sqrt(pow(u_x - v_x,2) + pow(u_y - v_y,2));
 }    
 
@@ -105,7 +113,7 @@ int main(int argc, char *argv[]) {
       GraphAttributes::nodeTemplate |
       GraphAttributes::nodeId); 
     
-    if (!GraphIO::readGML(GA, G, pFilename)) {
+    if (!ogdf::GraphIO::readGML(GA, G, pFilename)) {
         cerr << "Could not open " << pFilename << endl;
         return 1;
     }
@@ -116,11 +124,8 @@ int main(int argc, char *argv[]) {
         << n << " nodes." << endl;
 
     // Set start and end positions
-    configuration_t C_start, C_end;
-    C_start.position.m_x = 0.0f;
-    C_start.position.m_y = 0.0f;
-    C_start.heading = 0.0f;
-    copyConfiguration(C_start,C_end);
+    Configuration C_start(0.0f, 0.0f, 0.0f), C_end;
+    C_end = C_start;
     
     // Find nearest neighbor solution
     List<node> tour;
@@ -147,12 +152,11 @@ int main(int argc, char *argv[]) {
 /**
  * Solves the Euclidean Traveling Salesperson problem using the Nearest Neighbor algorithm.
  */
-double solveETSPNearestNeighbor(Graph &G, GraphAttributes &GA, configuration_t C_start, configuration_t C_end, List<node> &tour) {
+double solveETSPNearestNeighbor(Graph &G, GraphAttributes &GA, Configuration &C_start, Configuration &C_end, List<node> &tour) {
     double minCost = 0.0f;
     GraphCopy GC(G); // unvisited nodes
 
-    configuration_t C;
-    copyConfiguration(C_start, C);
+    Configuration C(C_start);
 
     #ifdef DEBUG
     printGraph(G, GA);
@@ -166,13 +170,11 @@ double solveETSPNearestNeighbor(Graph &G, GraphAttributes &GA, configuration_t C
         GC.delNode(vC);
 
         // Update configuration
-        C.position.m_x = GA.x(v);
-        C.position.m_y = GA.y(v);
+        C.setPosition(GA.x(v), GA.y(v));
     }
 
     // Return to start configuration
-    minCost += C.position.distance(C_end.position);
+    minCost += C.m_position.distance(C_end.m_position);
 
     return minCost;
 }
-

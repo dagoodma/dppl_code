@@ -22,7 +22,7 @@ THE SOFTWARE.
 /**
  * Calculate the shortest Dubins' path distance to the node.
  */
-double dubinsDistanceToNode(ogdf::GraphAttributes &GA, configuration_t &C, ogdf::node &node) {
+double dubinsDistanceToNode(ogdf::GraphAttributes &GA, Configuration &C, ogdf::node &node) {
     return 0.0f;
 }
 
@@ -30,6 +30,6 @@ double dubinsDistanceToNode(ogdf::GraphAttributes &GA, configuration_t &C, ogdf:
  * Compute the Dubins' path langth (shortest path with limited turn radius) between
  * two configurations.
  */
-double computeDubinsPathLength(configuration_t &C_Start, configuration_t &C_end, double turnRadius) {
+double computeDubinsPathLength(Configuration &C_Start, Configuration &C_end, double turnRadius) {
 }
 

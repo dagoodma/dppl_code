@@ -17,12 +17,15 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
+#include <math.h>
+
 #include <ogdf/basic/Graph.h>
 #include <ogdf/basic/GraphAttributes.h>
 #include <ogdf/fileformats/GraphIO.h>
 
 #include "Log.h"
 #include "Dubins.h"
+#include "Configuration.h"
 #include "Util.h"
 
 #define DEBUG
@@ -31,10 +34,30 @@ THE SOFTWARE.
 #ifdef DEBUG
 #include "stacktrace.h"
 #endif
+
+#define DEFEAULT_TURN_RADIUS    300.0f // [m]
  
-using namespace ogdf;
 using namespace std;
 
+// Have to import specifially, since Configuration clashes
+using ogdf::node;
+using ogdf::Graph;
+using ogdf::GraphAttributes;
+using ogdf::GraphCopy;
+using ogdf::DPoint;
+using ogdf::List;
+using ogdf::ListIterator;
+using ogdf::NodeArray;
+
+template <class T, size_t ROW, size_t COL<
+    using NodeMatrix = NodeArray<NodeArray<T,COL>, ROW>;
+
+void buildDubinsAdjacencyMatrix(Graph &G, GraphAttributes &GA, NodeMatrix<double> A,
+    NodeArray<double> X, double turnRadius);
+
+/**
+ * Writes Dubins edge distances to a TSPLIB-style problem file (.tsp).
+ */
 int main(int argc, char *argv[]) {
     // Setup stack traces for debugging
     char const *program_name = argv[0];
@@ -75,65 +98,29 @@ int main(int argc, char *argv[]) {
     int n = G.numberOfNodes();
     FILE_LOG(logDEBUG) << "Opened " << pFilename << ". Found " << m << " edges, and "
         << n << " nodes." << endl;
+ 
+    // Build Dubins' weighted adjacency matrix
+    NodeMatrix<double, n, n> A;
+    NodeArray<double, n> heading; // (TODO: randomize) 
+    buildDubinsAdjancencyMatrix(G, GA, A, heading, DEFAULT_TURN_RADIUS);
 
-    // Set start and end positions
-    configuration_t C_start, C_end;
-    C_start.position.m_x = 0.0f;
-    C_start.position.m_y = 0.0f;
-    C_start.heading = 0.0f;
-    copyConfiguration(C_start,C_end);
-    
     // Find nearest neighbor solution
-    List<node> tour;
-    FILE_LOG(logDEBUG) << "Starting solver.";
-    double cost = solveETSPNearestNeighbor(G,GA,C_start,C_end,tour);
-    FILE_LOG(logDEBUG) << "Finished solving with cost " << cost << ".";
+    FILE_LOG(logDEBUG) << "Starting Dubins' adjacency matrix computation." << endl;
+    FILE_LOG(logDEBUG) << "Finished." << endl;
+    cout << "Computed weighted adjacency matrix." << endl;
 
-    cout << "Solved " << n << " point tour with cost " << cost << "." << endl;
-
-    // Write solution to GML file
-    ListIterator<node> tourIter;
-    cout << "Tour: ";
-    for ( tourIter = tour.begin(); tourIter != tour.end(); tourIter++ ) {
-        if (tourIter != tour.begin())
-            cout << " -> ";
-        cout << GA.idNode(*tourIter);
-    }
-    cout << "." << endl;
-    
+    // Write solution to .tsp file
+        
     return 0;
 }
 
 
 /**
- * Solves the Euclidean Traveling Salesperson problem using the Nearest Neighbor algorithm.
+ * Computes an adjacency matrix of Dubins path lengths between nodes for ATSP.
  */
-double solveETSPNearestNeighbor(Graph &G, GraphAttributes &GA, configuration_t C_start, configuration_t C_end, List<node> &tour) {
-    double minCost = 0.0f;
-    GraphCopy GC(G); // unvisited nodes
-
-    configuration_t C;
-    copyConfiguration(C_start, C);
-
-    #ifdef DEBUG
-    printGraph(G, GA);
-    #endif
-
-    while (!GC.empty()) {
-        node vC;
-        minCost += findNearestNode(GC, GA, C, vC);
-        node v = GC.original(vC);
-        tour.pushBack(v);
-        GC.delNode(vC);
-
-        // Update configuration
-        C.position.m_x = GA.x(v);
-        C.position.m_y = GA.y(v);
-    }
-
-    // Return to start configuration
-    minCost += C.position.distance(C_end.position);
-
-    return minCost;
+void buildDubinsAdjacencyMatrix(Graph &G, GraphAttributes &GA, NodeMatrix<double> A,
+    NodeArray<double> X, double turnRadius) {
+  
+   
 }
 
