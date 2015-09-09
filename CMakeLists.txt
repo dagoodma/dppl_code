@@ -30,7 +30,8 @@ include_directories( include )
 ## Build and Link Executables
 
 ADD_EXECUTABLE( nearestNeighborETSP src/nearestNeighborETSP.cpp )
-ADD_EXECUTABLE( computeDubinsDistancesATSP src/computeDubinsDistancesATSP.cpp src/Dubins.cpp )
+ADD_EXECUTABLE( computeDubinsDistancesATSP src/computeDubinsDistancesATSP.cpp src/Dubins.cpp src/TSPLib.cpp )
+include_directories( lib/tsplib/e )
 
 ## OSX
 add_definitions("-fno-pie")

@@ -26,6 +26,9 @@ using Eigen::Vector3d;
 using Eigen::Vector2d;
 
 #include "Dubins.h"
+#include "Util.h"
+
+#define MAX_EDGE_COST           999999.0
 
 /**
  * Calculate the shortest Dubins' path distance to the node.
@@ -95,4 +98,27 @@ double dubinsPathLength(Configuration &Cs, Configuration &Ce, double r) {
     return std::min({L1, L2, L3, L4});
 }
 
+
+/**
+ * Computes an adjacency matrix of Dubins path lengths between nodes for ATSP.
+ */
+void buildDubinsAdjacencyMatrix(ogdf::Graph &G, ogdf::GraphAttributes &GA, 
+    NodeMatrix<double> &A, ogdf::NodeArray<double> &X, double turnRadius) {
+  
+    ogdf::node i, j;
+    forall_nodes(i, G) {
+        Configuration Ci(GA.x(i), GA.y(i), X(i));
+
+        forall_nodes(j, G) {
+            if (i == j) {
+                A[i][i] = MAX_EDGE_COST;
+                continue;
+            }
+            Configuration Cj(GA.x(j), GA.y(j), X(j));
+            
+            double w = dubinsPathLength(Ci, Cj, turnRadius);
+            A[i][j] = w;
+        }
+    }
+}
 
