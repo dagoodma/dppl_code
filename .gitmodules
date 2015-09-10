@@ -1,0 +1,3 @@
+[submodule "matlab"]
+	path = matlab
+	url = /Users/dagoodma/Dropbox/School/research/dubins_coverage/dubins_matlab
