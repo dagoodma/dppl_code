@@ -34,6 +34,8 @@ THE SOFTWARE.
 #ifdef DEBUG
 #include "stacktrace.h"
 #endif
+
+#define DEFAULT_START_HEADING 0.0
  
 using namespace std;
 
@@ -49,8 +51,7 @@ using ogdf::ListIterator;
 
 // Prototypes
 double euclideanDistanceToNode(GraphAttributes &GA, Configuration &C, node &node);
-double solveETSPNearestNeighbor(Graph &G, GraphAttributes &GA, Configuration &C_start,
-    Configuration &C_end, List<node> &tour);
+double solveETSPNearestNeighbor(Graph &G, GraphAttributes &GA, List<node> &tour);
 
 /**
  * Find the copied node vC nearest to C using the Euclidean distance metric.
@@ -123,14 +124,10 @@ int main(int argc, char *argv[]) {
     FILE_LOG(logDEBUG) << "Opened " << pFilename << ". Found " << m << " edges, and "
         << n << " nodes." << endl;
 
-    // Set start and end positions
-    Configuration C_start(0.0f, 0.0f, 0.0f), C_end;
-    C_end = C_start;
-    
     // Find nearest neighbor solution
     List<node> tour;
     FILE_LOG(logDEBUG) << "Starting solver.";
-    double cost = solveETSPNearestNeighbor(G,GA,C_start,C_end,tour);
+    double cost = solveETSPNearestNeighbor(G,GA,tour);
     FILE_LOG(logDEBUG) << "Finished solving with cost " << cost << ".";
 
     cout << "Solved " << n << " point tour with cost " << cost << "." << endl;
@@ -143,7 +140,6 @@ int main(int argc, char *argv[]) {
             cout << " -> ";
         cout << GA.idNode(*tourIter);
     }
-    cout << "." << endl;
     
     return 0;
 }
@@ -152,11 +148,15 @@ int main(int argc, char *argv[]) {
 /**
  * Solves the Euclidean Traveling Salesperson problem using the Nearest Neighbor algorithm.
  */
-double solveETSPNearestNeighbor(Graph &G, GraphAttributes &GA, Configuration &C_start, Configuration &C_end, List<node> &tour) {
+double solveETSPNearestNeighbor(Graph &G, GraphAttributes &GA, List<node> &tour) {
     double minCost = 0.0f;
     GraphCopy GC(G); // unvisited nodes
 
-    Configuration C(C_start);
+    node nodeStart = G.firstNode();
+    Configuration Cinit(GA.x(nodeStart), GA.y(nodeStart), DEFAULT_START_HEADING);
+    Configuration C(Cinit);
+    GC.delNode(GC.copy(nodeStart));
+    tour.pushBack(nodeStart);
 
     #ifdef DEBUG
     printGraph(G, GA);
@@ -174,7 +174,8 @@ double solveETSPNearestNeighbor(Graph &G, GraphAttributes &GA, Configuration &C_
     }
 
     // Return to start configuration
-    minCost += C.m_position.distance(C_end.m_position);
+    tour.pushBack(nodeStart);
+    minCost += C.m_position.distance(Cinit.m_position);
 
     return minCost;
 }

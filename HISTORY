@@ -1,0 +1,9 @@
+Project History
+
+* Jan 15, 2015 -- Wrote MATLAB code for toy problems. Had PTP and LTL, and attempted to solve both greedily (nearest neighbor in O(n^2) time) and optimally (linear programming approximation in O(n! * PTAS(n)) time -- naive).
+
+* May 15, 2015 -- Added test harnesses and DubinsPath library to simulate trajectories. This was used to create plots and to check against the length obtained with a DubinsShortestPathLength algorithm.
+
+* Sept 7, 2015 -- Started C++ library for solving Dubins ATSP, first with Boost (too complicated) then with to OGDF. Wrote a NearestNeighbor algorithm, and wrote a DubinsShortestPathLength function to populate a weighted adjacency matrix. Also started a simple TSPLib-IO library.
+
+* Sept 9, 2015 -- Working on converting LKH C project to a C++ library. Next step is to convert DATSP project into library and write a mex function. Then, write some scripts in MATLAB to analyze the results.
