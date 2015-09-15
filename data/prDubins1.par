@@ -1,7 +1,0 @@
-PROBLEM_FILE = prDubins1.tsp
-OUTPUT_TOUR_FILE = prDubins1Tour.tsp
-MOVE_TYPE = 5
-PATCHING_C = 3
-PATCHING_A = 2
-RUNS = 10
-

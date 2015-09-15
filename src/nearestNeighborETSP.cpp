@@ -132,7 +132,7 @@ int main(int argc, char *argv[]) {
 
     cout << "Solved " << n << " point tour with cost " << cost << "." << endl;
 
-    // Write solution to GML file
+    // TODO Write solution to GML file
     ListIterator<node> tourIter;
     cout << "Tour: ";
     for ( tourIter = tour.begin(); tourIter != tour.end(); tourIter++ ) {

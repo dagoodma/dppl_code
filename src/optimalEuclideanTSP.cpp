@@ -18,29 +18,33 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 #include <math.h>
+#include <chrono>
+#include <iostream>
+#include <fstream>
+#include <stdio.h>
 
 #include <ogdf/basic/Graph.h>
 #include <ogdf/basic/GraphAttributes.h>
 #include <ogdf/fileformats/GraphIO.h>
 
-//#include <cxxopts.h>
+#include <LKH.h>
 
 #include "Log.h"
 #include "Dubins.h"
 #include "Configuration.h"
 #include "Util.h"
-#include "NodeMatrix.h"
 #include "TSPLib.h"
 
 
 #define DEBUG
 
+#define TSP_FILE_EXTENSION ".tsp"
+#define PAR_FILE_EXTENSION ".par"
+
 // Enable stack traces in debug mode
 #ifdef DEBUG
 #include "stacktrace.h"
 #endif
-
-#define DEFAULT_TURN_RADIUS    10.0 // [m]
 
 using namespace std;
 
@@ -55,7 +59,9 @@ using ogdf::ListIterator;
 using ogdf::NodeArray;
 
 /**
- * Writes Dubins edge distances to a TSPLIB-style problem file (.tsp).
+ * Given the graph in the input GML file, this program solves the Symmetric Traveling
+ * Salesperson Problem (ETSP) using euclidean distances as a metric. The solution is 
+ * saved as a TSPLIB tour.
  */
 int main(int argc, char *argv[]) {
     // Setup stack traces for debugging
@@ -99,29 +105,49 @@ int main(int argc, char *argv[]) {
     int m = G.numberOfEdges();
     int n = G.numberOfNodes();
     FILE_LOG(logDEBUG) << "Opened " << inputFilename << ". Found " << m << " edges, and "
-        << n << " nodes." << endl;
- 
-    // Build Dubins' weighted adjacency matrix
-    //cout << "Here at line " << __LINE__ << " in file " << __FILE__ << "." << endl;
-    NodeMatrix<double> A(G);
-    NodeArray<double> heading(G,0.0); // (TODO: randomize) 
-    buildDubinsAdjacencyMatrix(G, GA, A, heading, DEFAULT_TURN_RADIUS);
+        << n << " nodes.";
 
-    node v = G.firstNode();
-    //cout << "At node v: " << A[v][v] << "." << endl;
-
-    // Find nearest neighbor solution
-    FILE_LOG(logDEBUG) << "Starting Dubins' adjacency matrix computation." << endl;
-    FILE_LOG(logDEBUG) << "Finished." << endl;
-    cout << "Computed weighted adjacency matrix." << endl;
-
-    // Write solution to .tsp file
+    // Generate temporary TSP and PAR files
+    string problemComment("Euclidean TSP problem with ");
+    problemComment += to_string(n) + " nodes.";
     size_t pos = outputFilename.find(".tsp");
     string problemName(outputFilename,0,pos);
-    string problemComment("Dubins' path for ");
-    problemComment += to_string(n) + " point scenario.";
-    writeATSPFile(outputFilename, problemName, problemComment, G, A);
+
+    string parFilename = (std::tmpnam(nullptr) + string(PAR_FILE_EXTENSION)),
+        tspFilename = (std::tmpnam(nullptr) + string(TSP_FILE_EXTENSION));
+    if (writePARFile(parFilename,tspFilename, outputFilename) != SUCCESS
+        || writeETSPFile(tspFilename, problemName, problemComment, G, GA) != SUCCESS);
+        return 1;
+
+    FILE_LOG(logDEBUG) << "Wrote " << parFilename << " and " << tspFilename << ".";
+    FILE_LOG(logDEBUG) << "Running LKH solver for Euclidean TSP.";
+
+    // Find Euclidean TSP solution with LKH into outputFilename
+    Timer *t1 = new Timer();
+    try { 
+        LKH::runSolver(const_cast<char*>(parFilename.c_str()));
+    } catch(const std::exception& e) { 
+        cerr << "LKH solver failed with an exception: " << endl << e.what() << endl;
+        FILE_LOG(logDEBUG) << "LKH exception: " << e.what();
+        return 1;
+    }
+    float elapsedTime = t1->diffMs();
+
+    FILE_LOG(logDEBUG) << "Finished (" <<  elapsedTime << "ms)."
+        << " Optimal euclidean tour in " << outputFilename << ".";
+    cout << "Computed Euclidean TSP solution in " <<  elapsedTime << "ms."
+        << endl << "Tour saved in " << outputFilename << "." << endl;
+
+    // Cleanup
+    if (std::remove(tspFilename.c_str()) != 0 
+        && std::remove(parFilename.c_str()) != 0) {
+        cerr << "Failed to delete temporary files " << tspFilename << ", " << parFilename << "." << endl;
+        FILE_LOG(logDEBUG) << "Failed deleting temporary files " << tspFilename << ", " << parFilename << ".";
+        return 1;
+    }
+    FILE_LOG(logDEBUG) << "Removed temporary files " << tspFilename << ", " << parFilename << ".";
         
     return 0;
 }
+
 
