@@ -22,6 +22,7 @@ THE SOFTWARE.
 #include <iostream>
 #include <fstream>
 #include <stdio.h>
+#include <stdbool.h>
 
 #include <ogdf/basic/Graph.h>
 #include <ogdf/basic/GraphAttributes.h>
@@ -53,6 +54,41 @@ using ogdf::DPoint;
 using ogdf::List;
 using ogdf::ListIterator;
 using ogdf::NodeArray;
+
+/**
+ * Applies the alternating algorithm to the given tour by finding heading orientations
+ * given the Dubins vehicle turning radius r. Modifies heading.
+ */
+void alternatingAlgorithm(Graph &G, GraphAttributes &GA, List<node> &tour,
+    NodeArray<double> &heading, double r) {
+    ListIterator<node> iter;
+    int i = 1;
+    #ifdef DEBUG
+    cout << "Tour: " << endl;
+    #endif
+    for ( iter = tour.begin(); (i < tour.size() && iter != tour.end()); iter++ ) {
+        node u = *iter, v = *(iter.succ());
+
+        #ifdef DEBUG
+        cout << "   Node " << GA.idNode(u) << endl;
+        #endif
+
+        // If odd
+        if (fmod(i,2) != 0) {
+            Vector2d uv(GA.x(u), GA.y(u));
+            Vector2d vv(GA.x(v), GA.y(v));
+            heading[u] = headingBetween(uv, vv);
+        }
+        // If even
+        else {
+            v = *(iter.pred());
+            heading[u] = heading[v];
+        }
+
+        i++;
+    }
+}
+
 
 /**
  * Given the graph in the input GML file, this program solves the Euclidean Traveling
@@ -135,40 +171,15 @@ int solveAlternatingDTSP(Graph &G, GraphAttributes &GA, double x, double r,
     cout << "Computed Euclidean TSP solution in " <<  elapsedTime << "ms."
         << endl << "Tour saved in " << tourFilename << "." << endl;
 
-    // Read tour file.
+    // Read LKH solution from tour file
     if (readTSPTourFile(tourFilename, G, GA, tour) != SUCCESS) {
         return 1;
     }
 
     // Apply alternating algorithm
-    ListIterator<node> iter;
-    cost = 0.0;
-    int i = 1;
-    #ifdef DEBUG
-    cout << "Tour: " << endl;
-    #endif
-    for ( iter = tour.begin(); (i < tour.size() && iter != tour.end()); iter++ ) {
-        node u = *iter, v = *(iter.succ());
-
-        #ifdef DEBUG
-        cout << "   Node " << GA.idNode(u) << endl;
-        #endif
-
-        // If odd
-        if (fmod(i,2) != 0) {
-            Vector2d uv(GA.x(u), GA.y(u));
-            Vector2d vv(GA.x(v), GA.y(v));
-            heading[u] = headingBetween(uv, vv);
-        }
-        // If even
-        else {
-            v = *(iter.pred());
-            heading[u] = heading[v];
-        }
-
-        i++;
-    }
-
+    alternatingAlgorithm(G, GA, tour, heading, r);
+    cost = dubinsTourCost(G, GA, tour, heading, r, true); // TODO add return cost input
+   
     // Print headings
     #ifdef DEBUG
     node u;
@@ -197,10 +208,9 @@ int solveAlternatingDTSP(Graph &G, GraphAttributes &GA, double x, double r,
     return 0;
 }
 
-
 /* Main Entry Point
- * If this isn't being called from MEX, and we're not compiled as a library, then 
- * this defines the main entry point.
+ * If we're not called as a MEX, and we're not compiled as a library, then 
+ * this is the main entry point.
  *
  * usage: alternatingDTSP <inputGMLFile> <startHeading> <turnRadius>
  */
@@ -230,9 +240,6 @@ int main(int argc, char *argv[]) {
     double x = atof(argv[2]);
     double r = atof(argv[3]);
 
-    List<node> tour;
-    double cost;
-
     // Load the graph (from GML)
     Graph G;
     GraphAttributes GA(G,
@@ -248,12 +255,20 @@ int main(int argc, char *argv[]) {
         cerr << "Could not open " << inputFilename << endl;
         return 1;
     }
-
-    NodeArray<double> heading(G);
-
     FILE_LOG(logDEBUG) << "Opened " << inputFilename << "." << endl;
 
-    return 
+    List<node> tour;
+    double cost;
+    NodeArray<double> heading(G);
+
+    if (solveAlternatingDTSP(G, GA, x, r, tour, heading, cost) != SUCCESS) {
+        cerr << "Alternating algorithm failed" << endl;
+        return 1;
+    }
+
+    // TODO something
+
+    return 0;
+
+}
 #endif
-
-

@@ -97,6 +97,31 @@ double dubinsPathLength(Configuration &Cs, Configuration &Ce, double r) {
     return std::min({L1, L2, L3, L4});
 }
 
+/**
+ * Finds the cost of the shortest dubins path through the given tour using the
+ * headings X. If returnCost is true, the cost of returning back to the first
+ * node in the tour will be included.
+ */
+double dubinsTourCost(ogdf::Graph &G, ogdf::GraphAttributes &GA,
+    ogdf::List<ogdf::node> &tour, ogdf::NodeArray<double> &X,
+    double r, bool returnCost) {
+    ogdf::ListIterator<ogdf::node> iter;
+    double cost = 0.0;
+
+    int m = tour.size() - (returnCost)? 1 : 2, // want: n - 1 OR n - 2
+        i = 0;
+    for ( iter = tour.begin(); (i < m && iter != tour.end()); iter++ ) {
+        ogdf::node u = *iter, v = *(iter.succ());
+
+        Configuration Cu(GA.x(u), GA.y(u), X(u)),
+                      Cv(GA.x(v), GA.y(v), X(v));
+        cost += dubinsPathLength(Cu, Cv, r);
+    }
+
+    return cost;
+}
+
+
 
 /**
  * Computes an adjacency matrix of Dubins path lengths between nodes for ATSP.
