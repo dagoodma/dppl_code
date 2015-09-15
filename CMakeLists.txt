@@ -1,6 +1,8 @@
 # CMakeLists
 cmake_minimum_required(VERSION 3.1)
-project (EXAMPLES CXX)
+project (dubinsAreaCoverage CXX)
+
+enable_testing()
 
 find_library(OGDF ogdf)
 find_library(COIN coin)
@@ -17,42 +19,30 @@ else()
         message(STATUS "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler.")
 endif()
 
+## Make binaries output in the same directory
+#set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+
 ## Paths to includes and libraries
-# OGDF
-include_directories( lib/ogdf/include )
-link_directories( lib/ogdf/_debug )
-# EIGEN
-include_directories( lib/eigen-eigen-bdd17ee3b1b3 )
+link_directories( ${CMAKE_SOURCE_DIR}/lib/LKH )
+link_directories( ${CMAKE_SOURCE_DIR}/lib/ogdf/_debug )
 
-# cxxopts
-include_directories( lib/cxxopts/src )
+include_directories( ${CMAKE_SOURCE_DIR}/lib/ogdf/include )
+include_directories( ${CMAKE_SOURCE_DIR}/lib/eigen-eigen-bdd17ee3b1b3 )
+#include_directories( ${CMAKE_SOURCE_DIR}/lib/cxxopts/src )
+include_directories( ${CMAKE_SOURCE_DIR}/lib/LKH/src/include )
+include_directories( ${CMAKE_SOURCE_DIR}/include )
 
-# LKH
-include_directories( lib/LKH/src/include )
-link_directories( lib/LKH )
-
-
-# Includes for this project
-include_directories( include )
+## Add subdirectories
+add_subdirectory( src )
+add_subdirectory( test )
 
 ## Add Compiler Flags
 
- #SET( CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${GCC_COVERAGE_COMPILE_FLAGS} -g" )
-
-## Build and Link Executables
-
-ADD_EXECUTABLE( nearestNeighborETSP src/nearestNeighborETSP.cpp )
-ADD_EXECUTABLE( computeDubinsDistancesATSP src/computeDubinsDistancesATSP.cpp src/Dubins.cpp src/TSPLib.cpp )
-ADD_EXECUTABLE( optimalEuclideanTSP src/optimalEuclideanTSP.cpp src/TSPLib.cpp )
-ADD_EXECUTABLE( alternatingDTSP src/alternatingDTSP.cpp src/TSPLib.cpp )
-
-## OSX
+# OSX
 add_definitions("-fno-pie")
 
-TARGET_LINK_LIBRARIES( nearestNeighborETSP OGDF COIN )
-TARGET_LINK_LIBRARIES( computeDubinsDistancesATSP OGDF COIN )
-TARGET_LINK_LIBRARIES( optimalEuclideanTSP OGDF COIN LKH )
-TARGET_LINK_LIBRARIES( alternatingDTSP OGDF COIN LKH )
+#SET( CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${GCC_COVERAGE_COMPILE_FLAGS} -g" )
+
 
 # the compiler used for C files 
 MESSAGE( STATUS "CMAKE_C_COMPILER: " ${CMAKE_C_COMPILER} )
