@@ -1,21 +1,8 @@
 /*
-The MIT License
-Copyright (c) 2015 UCSC Autonomous Systems Lab
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
+ * Copyright (C) 2014-2015 DubinsAreaCoverage.
+ * Created by David Goodman <dagoodma@gmail.com>
+ * Redistribution and use of this file is allowed according to the terms of the MIT license.
+ * For details see the COPYRIGHT file distributed with DubinsAreaCoverage.
 */
 #include <math.h>
 #include <chrono>
@@ -89,30 +76,17 @@ void alternatingAlgorithm(Graph &G, GraphAttributes &GA, List<node> &tour,
     }
 }
 
-
 /**
- * Given the graph in the input GML file, this program solves the Euclidean Traveling
- * Salesperson Problem(ETSP), then applies the alternating algorithm to solve the 
- * Dubins Traveling Salesperson Problem (DTSP). The solution is output as a tour inside,
- * a TSPlib file. The total cost is printed at tht end.
+ * Solves the alternating salesman DTSP, saving the tour, headings, and total
+ * cost into the given variables respectively.
  *
- * If called from a MEX file, returns the tour as a list of nodes, a set of headings for
- * each node, and the total cost.
- *
- * As CPP:
- * @param inputGMLFile  input GML file to read the problem from
- * @param x             a starting heading in radians [0,2*pi)
- * @param r             a turning radius in radians
- * @return An exit code (0==SUCCESS)
- *
- * In MEX MODE:
  * @param G         a graph of the problem
  * @param GA        attributes of graph
  * @param x         a starting heading in radians [0,2*pi)
  * @param r         a turning radius in radians
- * @param pTour     a pointer to list of nodes representing the tour
- * @param pheading  a pointer to NodeArray of headings
- * @param pCost     a pointer to the total cost
+ * @param tour      save into a list of nodes representing the tour
+ * @param heading   save into a NodeArray of headings
+ * @param cost      save the total cost
  * @return An exit code (0==SUCCESS)
  */
 int solveAlternatingDTSP(Graph &G, GraphAttributes &GA, double x, double r,
@@ -179,6 +153,7 @@ int solveAlternatingDTSP(Graph &G, GraphAttributes &GA, double x, double r,
     // Apply alternating algorithm
     alternatingAlgorithm(G, GA, tour, heading, r);
     cost = dubinsTourCost(G, GA, tour, heading, r, true); // TODO add return cost input
+    cout << "Solved " << n << " point tour with cost " << cost << "." << endl;
    
     // Print headings
     #ifdef DEBUG
@@ -208,13 +183,20 @@ int solveAlternatingDTSP(Graph &G, GraphAttributes &GA, double x, double r,
     return 0;
 }
 
-/* Main Entry Point
- * If we're not called as a MEX, and we're not compiled as a library, then 
- * this is the main entry point.
- *
+/** Main Entry Point
+ * Given the graph in the input GML file, this program solves the Euclidean Traveling
+ * Salesperson Problem (ETSP), and then applies the alternating algorithm to solve the 
+ * Dubins Traveling Salesperson Problem (DTSP). The solution is output as a tour inside
+ * a TSPlib file. The total cost is printed at tht end.
+ * 
  * usage: alternatingDTSP <inputGMLFile> <startHeading> <turnRadius>
+ *
+ * @param inputGMLFile  input GML file to read the problem from
+ * @param startHeading  a starting heading in radians [0,2*pi)
+ * @param turnRadius    a turning radius in radians
+ * @return An exit code (0==SUCCESS)
  */
-#if !defined(USE_MEX_MODE) && !defined(DUBINS_IS_LIBRARY)
+#if !defined(DUBINS_IS_LIBRARY)
 int main(int argc, char *argv[]) {
     // Setup stack traces for debugging
     char const *program_name = argv[0];

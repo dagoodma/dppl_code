@@ -7,7 +7,7 @@
 #include "mex.h"
 
 #define USE_MEX_MODE 
-#include "../alternatingDTSP.cpp"
+#include "../nearestNeighborDTSP.cpp"
 
 
 /* The gateway function */
@@ -91,7 +91,7 @@ void mexFunction( int nlhs, mxArray *plhs[],
     // Call solver
     List<node> tour;
     NodeArray<double> heading(G,0.0);
-    int result = solveAlternatingDTSP(G, GA, x, r, tour, heading, cost);
+    int result = solveNearestNeighborDTSP(G, GA, x, r, tour, heading, cost);
 
     if (result != 0) {
         mexErrMsgIdAndTxt("DubinsAreaCoverage:solver:failure",
@@ -147,3 +147,4 @@ void mexFunction( int nlhs, mxArray *plhs[],
         pX[u_idx] = heading[u];
     }
 }
+

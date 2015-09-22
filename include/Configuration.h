@@ -7,6 +7,10 @@
 #include <ogdf/basic/Graph.h>
 #include <ogdf/basic/GraphAttributes.h>
 
+#include <Eigen/Dense>
+
+using Eigen::Vector3d;
+using Eigen::Vector2d;
 
 class Configuration 
 {
@@ -58,6 +62,10 @@ public:
         m_position.m_y = y;
     }
 
+    void setHeading(double x) {
+        m_heading = x;
+    }
+
     void x(double x) {
         m_position.m_x = x;
     }
@@ -72,6 +80,14 @@ public:
         (*q)[0] = m_position.m_x;
         (*q)[1] = m_position.m_y;
         (*q)[2] = m_heading;
+    }
+
+    Vector2d asVector() {
+        return Vector2d(m_position.m_x, m_position.m_y);
+    }
+
+    double euclideanDistance(Configuration &C) {
+        return m_position.distance(C.m_position);
     }
 };
 
