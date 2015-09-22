@@ -67,7 +67,12 @@ public:
     }
 
     // Methods
-    
+    void asArray(double **q) {
+        *q = new double[3];
+        (*q)[0] = m_position.m_x;
+        (*q)[1] = m_position.m_y;
+        (*q)[2] = m_heading;
+    }
 };
 
 inline Configuration & Configuration::operator=(const Configuration &C) {

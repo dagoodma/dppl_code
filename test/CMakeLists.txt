@@ -3,6 +3,8 @@
 #project (test CXX)
 #enable_testing()
 
+## Required libraries
+# googletest & googlemock
 set(GMOCK_DIR "gtest/googlemock"
     CACHE PATH "The path to the GoogleMock test framework.")
 
@@ -17,14 +19,26 @@ elseif (APPLE)
 endif()
 
 add_subdirectory(${GMOCK_DIR} ${CMAKE_BINARY_DIR}/gmock)
-
 include_directories(SYSTEM ${GMOCK_DIR}/../googletest/include
                            ${GMOCK_DIR}/include)
 
-# Build tests
+# DubinsCurves
+link_directories( ${CMAKE_SOURCE_DIR}/lib/dubins-curves )
+include_directories( ${CMAKE_SOURCE_DIR}/lib/dubins-curves/include )
+
+
+## Build tests
 #add_executable(MyFirstTest myFirstTest.cpp)
 #target_link_libraries(MyFirstTest gmock_main)
 #add_test(AllTests MyFirstTest)
+
+# DubinsUnitTest
 add_executable(DubinsUnitTest DubinsUnitTest.cpp ../src/Dubins.cpp)
-target_link_libraries(DubinsUnitTest gmock_main OGDF COIN)
+target_link_libraries(DubinsUnitTest gmock_main OGDF COIN DUBINSCURVES)
 add_test(AllTests DubinsUnitTest)
+
+# UtilUnitTest
+add_executable(UtilUnitTest UtilUnitTest.cpp )
+target_link_libraries(UtilUnitTest gmock_main OGDF COIN )
+add_test(AllTests UtilUnitTest)
+

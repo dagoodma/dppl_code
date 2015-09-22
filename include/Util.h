@@ -16,36 +16,42 @@ using Eigen::Vector2d;
 #define FAILURE (-1)
 #define SUCCESS (0)
 
-/*
-**
- * Configuration (x,y,heading).
-typedef struct _configuration_t {
-    ogdf::DPoint position; // (x,y) position [m]
-    double heading;        // heading from North (positive y-axis)  [rad]
-} configuration_t;
-
-
-**
- * Copies configuration u to v.
-inline void copyConfiguration(configuration_t &u, configuration_t &v) {
-    v.position = ogdf::DPoint(u.position);
-    v.heading = u.heading;
+/**
+ * A modulo function that works properly with negatives.
+ */
+inline double myMod(double x, double y) {
+    double n = floor(x/y);
+    return x - n*y;
 }
-*/
 
 /**
  * Converts a heading angle x to a circular angle theta.
  */
 inline double headingToAngle(double x) {
-    return fmod(-(x - M_PI/2.0), 2.0 * M_PI);
+    return myMod(-(x - M_PI/2.0), 2.0 * M_PI);
 }
 
 /**
  * Wraps an angle to [0, 2*pi).
  */
 inline double wrapAngle(double x) {
-    return fmod(x, 2.0*M_PI);
+    return myMod(x, 2.0*M_PI);
 }
+
+/** 
+ * Converts an angle in degrees to radians.
+ */
+inline double degToRad(double x) {
+    return x * (M_PI/180.0);
+}
+
+/** 
+ * Converts an angle in radians to degrees.
+ */
+inline double radToDeg(double x) {
+    return x * (180.0/M_PI);
+}
+
 
 /**
  * Find the 2D heading angle between the vectors. Heading angle is in radians, and
@@ -60,16 +66,21 @@ inline double headingBetween(Vector2d u, Vector2d v) {
     double psi = 0.0;
 
     // Check quadrant
-    if (x1 <= x2 && y1 < y2)
+    if (x1 <= x2 && y1 < y2) {
         psi = atan((x2 - x1)/(y2 - y1));
-    else if (x1 < x2 && y1 >= y2)
-        psi = atan((y1 - y2)/(x2 - x1) + M_PI/2.0);
-    else if (x2 <= x1 && y2 < y1)
+    }
+    else if (x1 < x2 && y1 >= y2) {
+        psi = atan((y1 - y2)/(x2 - x1)) + M_PI/2.0;
+    }
+    else if (x2 <= x1 && y2 < y1) {
         psi = atan((x1 - x2)/(y1 - y2)) + M_PI;
-    else if (x2 < x1 && y1 <= y2)
+    }
+    else if (x2 < x1 && y1 <= y2) {
         psi = atan((y2 - y1)/(x1 - x2)) + 3.0*M_PI/2.0;
-    else
+    }
+    else {
         throw std::out_of_range ("uncovered quadrant");
+    }
 
     return psi;
 }

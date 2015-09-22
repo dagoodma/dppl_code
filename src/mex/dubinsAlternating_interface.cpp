@@ -20,9 +20,10 @@ THE SOFTWARE.
 #include <stdio.h>
 #include "mex.h"
 
-#define USE_MEX_MODE 
-#include "alternatingDTSP.cpp"
 #include "TSPLib.h"
+
+#define USE_MEX_MODE 
+#include "../alternatingDTSP.cpp"
 
 using namespace std;
 
