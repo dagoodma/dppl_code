@@ -21,7 +21,7 @@
 #include "Util.h"
 #include "TSPLib.h"
 
-#define DEBUG
+//#define DEBUG
 
 // Enable stack traces in debug mode
 #ifdef DEBUG
@@ -32,6 +32,7 @@ using namespace std;
 
 // Have to import specifially, since Configuration clashes
 using ogdf::node;
+using ogdf::edge;
 using ogdf::Graph;
 using ogdf::GraphAttributes;
 using ogdf::GraphCopy;
@@ -68,7 +69,7 @@ double findNearestNode(GraphCopy &GC, GraphAttributes &GA, Configuration &C,
  * algorithm, and then applies the alternating algorithm to generate a tour.
  */
 int solveNearestNeighborDTSP(Graph &G, GraphAttributes &GA, double x, double r,
-    List<node> &tour, NodeArray<double> &heading, double &cost) {
+    List<node> &tour, List<edge> &edges, NodeArray<double> &heading, double &cost) {
 
     if (x < 0.0 || x >= M_PI*2.0) {
         cerr << "Expected x to be between 0 and 2*PI." << endl;
@@ -90,9 +91,10 @@ int solveNearestNeighborDTSP(Graph &G, GraphAttributes &GA, double x, double r,
     FILE_LOG(logDEBUG) << "Found " << n << " nodes, and " << m << " edges." << endl;
 
 
-    cost = 0.0f;
+    double total_cost = 0.0f;
     GraphCopy GC(G); // unvisited nodes
     node nodeStart = G.firstNode();
+    node u = nodeStart;
     Configuration Cs(GA.x(nodeStart), GA.y(nodeStart), x);
     Configuration C(Cs);
     GC.delNode(GC.copy(nodeStart));
@@ -107,26 +109,37 @@ int solveNearestNeighborDTSP(Graph &G, GraphAttributes &GA, double x, double r,
     Timer *t1 = new Timer();
     while (!GC.empty()) {
         node vC;
-        cost += findNearestNode(GC, GA, C, vC, r);
+        double cost = findNearestNode(GC, GA, C, vC, r);
+        total_cost += cost;
         node v = GC.original(vC);
         GC.delNode(vC);
+
+        edge e = G.newEdge(u, v);
+        GA.doubleWeight(e) = cost;
+        edges.pushBack(e);
 
         tour.pushBack(v);
         Vector2d uv = C.asVector();
         Vector2d vv(GA.x(v), GA.y(v));
         double x_v = headingBetween(uv,vv);
         heading(v) = x_v;
+        u = v;
+
         // Update configuration
         C.setPosition(GA.x(v), GA.y(v));
         C.setHeading(x_v);
     }
     float elapsedTime = t1->diffMs();
 
-    // Return to start configuration
-    // TODO make optional
+    // Return to start configuration TODO make optional
+    double cost_return = dubinsPathLength(C, Cs, r);
+    cost = total_cost + cost_return;
+    edge e = G.newEdge(u, nodeStart);
+    GA.doubleWeight(e) = cost;
+    edges.pushBack(e);
     tour.pushBack(nodeStart);
-    cost += dubinsPathLength(C, Cs, r);
-    //cost += C.m_position.distance(Cs.m_position);
+
+    //cost += C.m_position.distance(Cs.m_position); // euclidean
 
     FILE_LOG(logDEBUG) << "Finished solving with cost " << cost << ".";
 
@@ -135,7 +148,6 @@ int solveNearestNeighborDTSP(Graph &G, GraphAttributes &GA, double x, double r,
    
     // Print headings
     #ifdef DEBUG
-    node u;
     cout << "Headings: " << endl;
     forall_nodes(u,G) {
         cout << "   Node " << GA.idNode(u) << ": " << heading[u] << " rad." << endl;
@@ -145,6 +157,19 @@ int solveNearestNeighborDTSP(Graph &G, GraphAttributes &GA, double x, double r,
     return SUCCESS;
 }
 
+int solveNearestNeighborDTSP(Graph &G, GraphAttributes &GA, double x, double r,
+    List<edge> &edges, NodeArray<double> &heading, double &cost) {
+
+    List<node> tour;
+    return solveNearestNeighborDTSP(G, GA, x, r, tour, edges, heading, cost);
+}
+
+int solveNearestNeighborDTSP(Graph &G, GraphAttributes &GA, double x, double r,
+    List<node> &tour, NodeArray<double> &heading, double &cost) {
+
+    List<edge> edges;
+    return solveNearestNeighborDTSP(G, GA, x, r, tour, edges, heading, cost);
+}
 
 /** Main Entry Point
  * Given the graph in the input GML file, this program solves the Euclidean Traveling
@@ -189,6 +214,7 @@ int main(int argc, char *argv[]) {
       GraphAttributes::edgeGraphics |
       GraphAttributes::nodeLabel |
       GraphAttributes::edgeStyle |
+      GraphAttributes::edgeDoubleWeight |
       GraphAttributes::nodeStyle |
       GraphAttributes::nodeTemplate |
       GraphAttributes::nodeId); 

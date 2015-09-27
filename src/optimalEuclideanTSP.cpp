@@ -36,7 +36,7 @@ THE SOFTWARE.
 #include "TSPLib.h"
 
 
-#define DEBUG
+//#define DEBUG
 
 #define TSP_FILE_EXTENSION ".tsp"
 #define PAR_FILE_EXTENSION ".par"

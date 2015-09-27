@@ -69,6 +69,7 @@ void mexFunction( int nlhs, mxArray *plhs[],
       GraphAttributes::edgeGraphics |
       GraphAttributes::nodeLabel |
       GraphAttributes::edgeStyle |
+      GraphAttributes::edgeDoubleWeight |
       GraphAttributes::nodeStyle |
       GraphAttributes::nodeTemplate |
       GraphAttributes::nodeId); 
@@ -90,19 +91,20 @@ void mexFunction( int nlhs, mxArray *plhs[],
 
     // Call solver
     List<node> tour;
+    List<edge> edges;
     NodeArray<double> heading(G,0.0);
-    int result = solveAlternatingDTSP(G, GA, x, r, tour, heading, cost);
+    int result = solveAlternatingDTSP(G, GA, x, r, tour, edges, heading, cost);
 
     if (result != 0) {
         mexErrMsgIdAndTxt("DubinsAreaCoverage:solver:failure",
             "Solver failed with a non-zero return code.");
     }
 
-    int m = tour.size() - 1;
+    int m = edges.size();
 
     // Build output matrices
-    plhs[0] = mxCreateDoubleMatrix((mwSize)m,(mwSize)2,mxREAL);
-    plhs[1] = mxCreateDoubleMatrix((mwSize)1,(mwSize)n,mxREAL);
+    plhs[0] = mxCreateDoubleMatrix((mwSize)m,(mwSize)3,mxREAL);
+    plhs[1] = mxCreateDoubleMatrix((mwSize)n,(mwSize)1,mxREAL);
     plhs[2] = mxCreateDoubleScalar(cost);
     double *pE = mxGetPr(plhs[0]), *pX = mxGetPr(plhs[1]);
     node u;
@@ -126,6 +128,25 @@ void mexFunction( int nlhs, mxArray *plhs[],
     mexPrintf("Printing tour...\n");
     #endif
     int row = 0;
+    edge e;
+    forall_edges(e, G) {
+        node u = e->source();
+        node v = e->target();
+        int u_id = GA.idNode(u);
+        int v_id = GA.idNode(v);
+
+        #ifdef DEBUG
+        mexPrintf("Edge is 0X%X with weight %0.1f.\n", e, GA.doubleWeight(e));
+        mexPrintf("Node %d to %d.\n", u_id, v_id);
+        #endif
+
+        Mat(pE,row,0) = u_id;
+        Mat(pE,row,1) = v_id;
+        Mat(pE,row,2) = GA.doubleWeight(e);
+        row++;
+    }
+    /*
+    int row = 0;
     for ( ; (row < m && iter != tour.end()) ; iter++) {
         node u = *iter;
         node v = *(iter.succ());
@@ -139,6 +160,7 @@ void mexFunction( int nlhs, mxArray *plhs[],
         Mat(pE,row,1) = v_id;
         row++;
     }
+    */
 
     // Copy headings
     int i = 0;

@@ -18,6 +18,7 @@ using namespace DubinsCurves;
 
 // Have to import specifially, since Configuration clashes
 using ogdf::node;
+using ogdf::edge;
 using ogdf::Graph;
 using ogdf::GraphAttributes;
 using ogdf::DPoint;
@@ -125,6 +126,7 @@ public:
             GraphAttributes::edgeGraphics |
             GraphAttributes::nodeLabel |
             GraphAttributes::edgeStyle |
+            GraphAttributes::edgeDoubleWeight |
             GraphAttributes::nodeStyle |
             GraphAttributes::nodeTemplate |
             GraphAttributes::nodeId),
@@ -189,42 +191,219 @@ protected:
 // Tests for dubinsTourLength
 TEST_F(DubinsTourTest, EmptyTourHasZeroCost) {
     //InitializeScenario(noConfigs);
-    List<node> tour;
 
+    // Check that empty tours have zero cost regardless of whether returnCost is set or not
+    List<node> tour;
     EXPECT_EQ(0.0, dubinsTourCost(m_G, m_GA, tour, m_nodeHeadings, TURN_RADIUS, false));
+    EXPECT_EQ(0.0, dubinsTourCost(m_G, m_GA, tour, m_nodeHeadings, TURN_RADIUS, true));
 }
 
 TEST_F(DubinsTourTest, ShortTourHasZeroCost) {
     ASSERT_GT(GetSize(), 0);
     List<node> tour;
-    tour.pushBack(GetNode(1));
 
+    // Check that single node tours have zero cost ---------------"-------------
+    tour.pushBack(GetNode(1));
     EXPECT_EQ(0.0, dubinsTourCost(m_G, m_GA, tour, m_nodeHeadings, TURN_RADIUS, false));
     EXPECT_EQ(0.0, dubinsTourCost(m_G, m_GA, tour, m_nodeHeadings, TURN_RADIUS, true));
 }
 
-TEST_F(DubinsTourTest, TourReturnsCorrectCost) {
+TEST_F(DubinsTourTest, TourIgnoresReturn) {
+    List<node> tour;
+    tour.pushBack(GetNode(1));
+    tour.pushBack(GetNode(2));
+    double expected_cost = 6.241592653589793;
+
+    // Two-node tour works. no returns
+    EXPECT_DOUBLE_EQ(expected_cost, dubinsTourCost(m_G, m_GA, tour,
+        m_nodeHeadings, TURN_RADIUS, false));
+    
+    // Same cost, because function ignores returning to node 1
+    tour.pushBack(GetNode(1));
+    EXPECT_DOUBLE_EQ(expected_cost, dubinsTourCost(m_G, m_GA, tour,
+        m_nodeHeadings, TURN_RADIUS, false));
+}
+
+TEST_F(DubinsTourTest, TourFollowsReturn) {
+    List<node> tour;
+    tour.pushBack(GetNode(1));
+    tour.pushBack(GetNode(2));
+
+    // Two-node tour returns
+    EXPECT_DOUBLE_EQ(12.483185307179586, dubinsTourCost(m_G, m_GA, tour,
+        m_nodeHeadings, TURN_RADIUS, true));
+
+    // Same cost, because function will not add return node 1 to the end
+    tour.pushBack(GetNode(1));
+    EXPECT_DOUBLE_EQ(12.483185307179586, dubinsTourCost(m_G, m_GA, tour,
+        m_nodeHeadings, TURN_RADIUS, true));
+}
+
+
+TEST_F(DubinsTourTest, TourWithThreeNodes) {
     //InitializeScenario(nodeConfigs);
     ASSERT_EQ(3, GetSize());
 
     List<node> tour;
     tour.pushBack(GetNode(1));
     tour.pushBack(GetNode(2));
-
-    EXPECT_DOUBLE_EQ(6.241592653589793, dubinsTourCost(m_G, m_GA, tour,
-        m_nodeHeadings, TURN_RADIUS, false));
-
     tour.pushBack(GetNode(3));
+
     EXPECT_DOUBLE_EQ(10.351530620781304, dubinsTourCost(m_G, m_GA, tour,
         m_nodeHeadings, TURN_RADIUS, false));
 
     EXPECT_DOUBLE_EQ(16.623390656993465, dubinsTourCost(m_G, m_GA, tour,
         m_nodeHeadings, TURN_RADIUS, true));
 
-    tour.pushBack(GetNode(1));
-    EXPECT_DOUBLE_EQ(16.623390656993465, dubinsTourCost(m_G, m_GA, tour,
-        m_nodeHeadings, TURN_RADIUS, false));
 }
+
+class DubinsTourEdgesTest : public DubinsTourTest {
+};
+
+
+// Tests for createDubinsTourEdges
+TEST_F(DubinsTourEdgesTest, FailsWithExistingEdges) {
+    List<node> tour;
+    List<edge> edges;
+    tour.pushBack(GetNode(1));
+    tour.pushBack(GetNode(2));
+
+    edge e = m_G.newEdge(GetNode(1), GetNode(2));
+    EXPECT_EQ(1, m_G.numberOfEdges());
+
+    EXPECT_EQ(-1, createDubinsTourEdges(m_G, m_GA, tour, m_nodeHeadings, TURN_RADIUS,
+        edges, false));
+    EXPECT_EQ(-1, createDubinsTourEdges(m_G, m_GA, tour, m_nodeHeadings, TURN_RADIUS,
+        edges, true));
+} // FailsWithExistingEdges
+
+TEST_F(DubinsTourEdgesTest, EmptyTourHasNoEdges) {
+    //InitializeScenario(noConfigs);
+    List<node> tour;
+    List<edge> edges;
+
+    // No cost, no edges
+    EXPECT_EQ(0.0, createDubinsTourEdges(m_G, m_GA, tour, m_nodeHeadings, TURN_RADIUS,
+        edges, true));
+    EXPECT_EQ(0, m_G.numberOfEdges());
+    EXPECT_EQ(0, edges.size());
+
+    // Same with return edge option set
+    clearEdges(m_G);
+    EXPECT_EQ(0.0, createDubinsTourEdges(m_G, m_GA, tour, m_nodeHeadings, TURN_RADIUS,
+        edges, true));
+    EXPECT_EQ(0, m_G.numberOfEdges());
+    EXPECT_EQ(0, edges.size());
+} // EmptyTourHasNoEdges
+
+
+TEST_F(DubinsTourEdgesTest, ShortTourHasNoEdges) {
+    ASSERT_GT(GetSize(), 0);
+    List<node> tour;
+    List<edge> edges;
+    tour.pushBack(GetNode(1));
+
+    // No cost, no edges
+    EXPECT_EQ(0.0, createDubinsTourEdges(m_G, m_GA, tour, m_nodeHeadings, TURN_RADIUS,
+        edges, true));
+    EXPECT_EQ(0, m_G.numberOfEdges());
+    EXPECT_EQ(0, edges.size());
+
+    // Same with return edge option set
+    clearEdges(m_G);
+    EXPECT_EQ(0.0, createDubinsTourEdges(m_G, m_GA, tour, m_nodeHeadings, TURN_RADIUS,
+        edges, true));
+    EXPECT_EQ(0, m_G.numberOfEdges());
+    EXPECT_EQ(0, edges.size());
+} // ShortTourHasNoEdges
+
+TEST_F(DubinsTourEdgesTest, NoReturnEdge) {
+    List<node> tour;
+    List<edge> edges;
+    tour.pushBack(GetNode(1));
+    tour.pushBack(GetNode(2));
+
+    // Cost matches, and we have 1 edge
+    double expected_cost = 6.241592653589793;
+    EXPECT_DOUBLE_EQ(expected_cost, createDubinsTourEdges(m_G, m_GA, tour,
+        m_nodeHeadings, TURN_RADIUS, edges, false));
+    EXPECT_EQ(1, m_G.numberOfEdges());
+    EXPECT_EQ(1, edges.size());
+    edge e = edges.front();
+    EXPECT_EQ(GetNode(1), e->source());
+    EXPECT_EQ(GetNode(2), e->target());
+    EXPECT_EQ(expected_cost, m_GA.doubleWeight(e));
+    
+    // Same with no return edge (ignore extra node in tour)
+    clearEdges(m_G);
+    edges.clear();
+    tour.pushBack(GetNode(1));
+    EXPECT_DOUBLE_EQ(expected_cost, createDubinsTourEdges(m_G, m_GA, tour,
+        m_nodeHeadings, TURN_RADIUS, edges, false));
+    EXPECT_EQ(1, m_G.numberOfEdges());
+    EXPECT_EQ(1, edges.size());
+    e = edges.front();
+    EXPECT_EQ(GetNode(1), e->source());
+    EXPECT_EQ(GetNode(2), e->target());
+    EXPECT_EQ(expected_cost, m_GA.doubleWeight(e));
+} // NoReturnEdge
+
+TEST_F(DubinsTourEdgesTest, ReturnEdge) {
+    List<node> tour;
+    List<edge> edges;
+    tour.pushBack(GetNode(1));
+    tour.pushBack(GetNode(2));
+
+    // Cost matches, and we have 1 edge
+    double expected_cost = 12.483185307179586;
+    EXPECT_DOUBLE_EQ(expected_cost, createDubinsTourEdges(m_G, m_GA, tour,
+        m_nodeHeadings, TURN_RADIUS, edges, true));
+    EXPECT_EQ(2, m_G.numberOfEdges());
+    EXPECT_EQ(2, edges.size());
+    edge e1 = edges.front();
+    edge e2 = edges.front()->succ();
+    EXPECT_EQ(GetNode(1), e1->source());
+    EXPECT_EQ(GetNode(2), e1->target());
+    EXPECT_EQ(6.241592653589793, m_GA.doubleWeight(e1));
+    EXPECT_EQ(GetNode(2), e2->source());
+    EXPECT_EQ(GetNode(1), e2->target());
+    EXPECT_EQ(6.241592653589793, m_GA.doubleWeight(e2));
+    
+    // Same with no return edge (ignore extra node in tour)
+    clearEdges(m_G);
+    edges.clear();
+    tour.pushBack(GetNode(1));
+    EXPECT_DOUBLE_EQ(expected_cost, createDubinsTourEdges(m_G, m_GA, tour,
+        m_nodeHeadings, TURN_RADIUS, edges, true));
+    EXPECT_EQ(2, m_G.numberOfEdges());
+    EXPECT_EQ(2, edges.size());
+    e1 = edges.front();
+    e2 = edges.front()->succ();
+    EXPECT_EQ(GetNode(1), e1->source());
+    EXPECT_EQ(GetNode(2), e1->target());
+    EXPECT_EQ(6.241592653589793, m_GA.doubleWeight(e1));
+    EXPECT_EQ(GetNode(2), e2->source());
+    EXPECT_EQ(GetNode(1), e2->target());
+    EXPECT_EQ(6.241592653589793, m_GA.doubleWeight(e2));
+} // ReturnEdge
+
+TEST_F(DubinsTourEdgesTest, TourWithThreeNodes) {
+    //InitializeScenario(nodeConfigs);
+    ASSERT_EQ(3, GetSize());
+
+    List<node> tour;
+    tour.pushBack(GetNode(1));
+    tour.pushBack(GetNode(2));
+    tour.pushBack(GetNode(3));
+
+    EXPECT_DOUBLE_EQ(10.351530620781304, dubinsTourCost(m_G, m_GA, tour,
+        m_nodeHeadings, TURN_RADIUS, false));
+
+    EXPECT_DOUBLE_EQ(16.623390656993465, dubinsTourCost(m_G, m_GA, tour,
+        m_nodeHeadings, TURN_RADIUS, true));
+
+}
+
 
 /* This is for testing different data on the same tests. 
  * Don't need it yet! */

@@ -33,7 +33,7 @@ THE SOFTWARE.
 #include "TSPLib.h"
 
 
-#define DEBUG
+//#define DEBUG
 
 // Enable stack traces in debug mode
 #ifdef DEBUG

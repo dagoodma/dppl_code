@@ -151,8 +151,12 @@ double dubinsTourCost(ogdf::Graph &G, ogdf::GraphAttributes &GA,
 
     // Add the return edge if necessary
     ogdf::List<ogdf::node> modTour(tour);
-    if (returnCost) {
+    ogdf::node lastNode = modTour.back();
+    if (returnCost && lastNode != *(modTour.begin())) {
         modTour.pushBack(*(tour.begin()));
+    }
+    else if (!returnCost && lastNode == *(modTour.begin())) {
+        modTour.popBack();
     }
 
     int m = modTour.size() - 1;
@@ -167,6 +171,54 @@ double dubinsTourCost(ogdf::Graph &G, ogdf::GraphAttributes &GA,
     }
 
     return cost;
+}
+
+
+/**
+ * Adds edges to the graph with the cost of a Dubins tour. Returns the cost of
+ * the shortest dubins path through the given tour. If returnEdge is true, the
+ * return edge is added. Edges created are saved into the list of edges.
+ */
+double createDubinsTourEdges(ogdf::Graph &G, ogdf::GraphAttributes &GA,
+    ogdf::List<ogdf::node> &tour, ogdf::NodeArray<double> &X,
+    double r, ogdf::List<ogdf::edge> &edges, bool returnEdge) {
+    ogdf::ListIterator<ogdf::node> iter;
+    double total_cost = 0.0;
+
+    if (tour.size() < 2) return 0.0;
+    if (G.numberOfEdges() > 0) {
+        std::cerr << "cannot have existing edges in graph" << endl;
+        return -1.0;
+    }
+
+    // Add the return edge if necessary
+    ogdf::List<ogdf::node> modTour(tour);
+    ogdf::node lastNode = modTour.back();
+    if (returnEdge && lastNode != *(modTour.begin())) {
+        modTour.pushBack(*(tour.begin()));
+    }
+    else if (!returnEdge && lastNode == *(modTour.begin())) {
+        modTour.popBack();
+    }
+ 
+    int m = modTour.size() - 1;
+    int i = 0; // edge index
+    for ( iter = modTour.begin(); (i < m && iter != modTour.end()); iter++ ) {
+        ogdf::node u = *iter, v = *(iter.succ());
+
+        Configuration Cu(GA.x(u), GA.y(u), X(u)),
+                      Cv(GA.x(v), GA.y(v), X(v));
+        double cost = dubinsPathLength(Cu, Cv, r);
+
+        // Add the edge
+        ogdf::edge e = G.newEdge(u,v);
+        GA.doubleWeight(e) = cost;
+        edges.pushBack(e);
+        total_cost += cost;
+        i++;
+    }
+
+    return total_cost;
 }
 
 

@@ -107,6 +107,18 @@ inline double l2_norm(Vector3d const& u) {
 } 
 */
 
+/*
+ * Clears all edges in the graph.
+ */
+inline void clearEdges(ogdf::Graph &G) {
+    ogdf::edge e, next;
+    int i = 1;
+    for (e = G.firstEdge(); e; e = next) {
+        next = e->succ();
+        G.delEdge(e);
+    }
+}
+
 /**
  * Prints a list of all nodes and their (x,y) positions.
  */

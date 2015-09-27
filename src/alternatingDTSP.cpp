@@ -34,6 +34,7 @@ using namespace std;
 
 // Have to import specifially, since Configuration clashes
 using ogdf::node;
+using ogdf::edge;
 using ogdf::Graph;
 using ogdf::GraphAttributes;
 using ogdf::GraphCopy;
@@ -71,7 +72,6 @@ void alternatingAlgorithm(Graph &G, GraphAttributes &GA, List<node> &tour,
             v = *(iter.pred());
             heading[u] = heading[v];
         }
-
         i++;
     }
 }
@@ -85,12 +85,13 @@ void alternatingAlgorithm(Graph &G, GraphAttributes &GA, List<node> &tour,
  * @param x         a starting heading in radians [0,2*pi)
  * @param r         a turning radius in radians
  * @param tour      save into a list of nodes representing the tour
+ * @param edges     save into a list of edges representing the tour
  * @param heading   save into a NodeArray of headings
  * @param cost      save the total cost
  * @return An exit code (0==SUCCESS)
  */
 int solveAlternatingDTSP(Graph &G, GraphAttributes &GA, double x, double r,
-    List<node> &tour, NodeArray<double> &heading, double &cost) {
+    List<node> &tour, List<edge> &edges, NodeArray<double> &heading, double &cost) {
 
     if (x < 0.0 || x >= M_PI*2.0) {
         cerr << "Expected x to be between 0 and 2*PI." << endl;
@@ -152,7 +153,7 @@ int solveAlternatingDTSP(Graph &G, GraphAttributes &GA, double x, double r,
 
     // Apply alternating algorithm
     alternatingAlgorithm(G, GA, tour, heading, r);
-    cost = dubinsTourCost(G, GA, tour, heading, r, true); // TODO add return cost input
+    cost = createDubinsTourEdges(G, GA, tour, heading, r, edges, true); // TODO add return cost input
     cout << "Solved " << n << " point tour with cost " << cost << "." << endl;
    
     // Print headings
@@ -182,6 +183,21 @@ int solveAlternatingDTSP(Graph &G, GraphAttributes &GA, double x, double r,
 #endif
     return 0;
 }
+
+int solveAlternatingDTSP(Graph &G, GraphAttributes &GA, double x, double r,
+    List<edge> &edges, NodeArray<double> &heading, double &cost) {
+
+    List<node> tour;
+    return solveAlternatingDTSP(G, GA, x, r, tour, edges, heading, cost);
+}
+
+int solveAlternatingDTSP(Graph &G, GraphAttributes &GA, double x, double r,
+    List<node> &tour, NodeArray<double> &heading, double &cost) {
+
+    List<edge> edges;
+    return solveAlternatingDTSP(G, GA, x, r, tour, edges, heading, cost);
+}
+
 
 /** Main Entry Point
  * Given the graph in the input GML file, this program solves the Euclidean Traveling
@@ -229,6 +245,7 @@ int main(int argc, char *argv[]) {
       GraphAttributes::edgeGraphics |
       GraphAttributes::nodeLabel |
       GraphAttributes::edgeStyle |
+      GraphAttributes::edgeDoubleWeight |
       GraphAttributes::nodeStyle |
       GraphAttributes::nodeTemplate |
       GraphAttributes::nodeId); 

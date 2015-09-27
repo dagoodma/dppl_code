@@ -18,5 +18,9 @@ void buildDubinsAdjacencyMatrix(ogdf::Graph &G, ogdf::GraphAttributes &GA,
 
 double dubinsTourCost(ogdf::Graph &G, ogdf::GraphAttributes &GA,
     ogdf::List<ogdf::node> &tour, ogdf::NodeArray<double> &X,
-    double r, bool returnCost);
+    double r, bool returnCost = false);
+
+double createDubinsTourEdges(ogdf::Graph &G, ogdf::GraphAttributes &GA,
+    ogdf::List<ogdf::node> &tour, ogdf::NodeArray<double> &X,
+    double r, ogdf::List<ogdf::edge> &edges, bool returnEdge = false);
 #endif // _DUBINS_H_
