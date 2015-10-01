@@ -1,0 +1,43 @@
+graph  {
+	graph [graphics="[ ]",
+		id=0,
+		labelGraphics="[ ]",
+		version=0
+	];
+	1	 [LabelGraphics="[ type \"text\" ]",
+		name=1,
+		pos="0.0,0.0",
+		shape=oval];
+	2	 [LabelGraphics="[ type \"text\" ]",
+		name=2,
+		pos="150.0,0.0",
+		shape=oval];
+	3	 [LabelGraphics="[ type \"text\" ]",
+		name=3,
+		pos="250.0,0.0",
+		shape=oval];
+	4	 [LabelGraphics="[ type \"text\" ]",
+		name=4,
+		pos="350.0,0.0",
+		shape=oval];
+	5	 [LabelGraphics="[ type \"text\" ]",
+		name=5,
+		pos="450.0,0.0",
+		shape=oval];
+	6	 [LabelGraphics="[ type \"text\" ]",
+		name=6,
+		pos="150.0,-100.0",
+		shape=oval];
+	7	 [LabelGraphics="[ type \"text\" ]",
+		name=7,
+		pos="250.0,-100.0",
+		shape=oval];
+	8	 [LabelGraphics="[ type \"text\" ]",
+		name=8,
+		pos="350.0,-100.0",
+		shape=oval];
+	9	 [LabelGraphics="[ type \"text\" ]",
+		name=9,
+		pos="150.0,-200.0",
+		shape=oval];
+}
