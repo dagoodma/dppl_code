@@ -119,6 +119,8 @@ inline void clearEdges(ogdf::Graph &G) {
     }
 }
 
+
+
 /**
  * Prints a list of all nodes and their (x,y) positions.
  */
@@ -130,7 +132,52 @@ inline void printGraph(ogdf::Graph &G, ogdf::GraphAttributes &GA) {
     forall_nodes(u,G) {
         cout << "   Node " << GA.idNode(u) << " at (" << GA.x(u) << ", " << GA.y(u) << ")." << endl;
     }
+
+    ogdf::edge e;
+    forall_edges(e,G) {
+        ogdf::node u = e->source();
+        ogdf::node v = e->target();
+        cout << "   Edge " << e->index() << " from node " << GA.idNode(u)
+            << " (" << GA.x(u) << ", " << GA.y(u) << ") to node " << GA.idNode(v)
+            << " (" << GA.x(v) << ", " << GA.y(v) << ")." << std::endl;
+    }
 }
+
+/**
+ * Prints all edges in the graph.
+ */
+inline void printEdges(ogdf::Graph &G, ogdf::GraphAttributes &GA) {
+    ogdf::edge e;
+    cout << "Edges: ";
+    forall_edges(e, G) {
+    //for ( edgeIter = edges.begin(); edgeIter != edges.end(); edgeIter++ ) {
+        ogdf::node u = e->source();
+        ogdf::node v = e->target();
+        int uid = GA.idNode(u);
+        int vid = GA.idNode(v);
+        double cost = GA.doubleWeight(e);
+        cout <<"   " << uid << " -> " << vid << " : " << cost << endl;
+    }
+}
+
+/**
+ * Prints edge list.
+ */
+inline void printEdges(ogdf::Graph &G, ogdf::GraphAttributes &GA,
+    ogdf::List<ogdf::edge> &edges) {
+    ogdf::ListIterator<ogdf::edge> edgeIter;
+    cout << "Edges: " << endl;
+    for ( edgeIter = edges.begin(); edgeIter != edges.end(); edgeIter++ ) {
+        ogdf::edge e = *edgeIter;
+        ogdf::node u = e->source();
+        ogdf::node v = e->target();
+        int uid = GA.idNode(u);
+        int vid = GA.idNode(v);
+        double cost = GA.doubleWeight(e);
+        cout <<"   " << uid << " -> " << vid << " : " << cost << endl;
+    }
+}
+
 
 /**
  * Performance timer class (c++11 only).

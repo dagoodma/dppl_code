@@ -230,25 +230,20 @@ int main(int argc, char *argv[]) {
 
     // Find nearest neighbor solution
     List<node> tour;
+    List<edge> edges;
     NodeArray<double> heading(G);
     double cost = 0.0;
-    int result = solveNearestNeighborDTSP(G,GA,x,r,tour,heading,cost);
+    int result = solveNearestNeighborDTSP(G,GA,x,r,tour, edges,heading,cost);
 
     if (result != SUCCESS) {
         cerr << "Nearest neighbor algorithm failed" << endl;
         return 1;
     }
-
     cout << "Solved " << n << " point tour with cost " << cost << "." << endl;
 
-    // Print heading
-    ListIterator<node> tourIter;
-    cout << "Tour: ";
-    for ( tourIter = tour.begin(); tourIter != tour.end(); tourIter++ ) {
-        if (tourIter != tour.begin())
-            cout << " -> ";
-        cout << GA.idNode(*tourIter);
-    }
+    // Print edges
+    printEdges(G, GA);
+    
     
     return 0;
 }

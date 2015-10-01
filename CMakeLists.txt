@@ -30,7 +30,7 @@ link_directories( ${CMAKE_SOURCE_DIR}/lib/ogdf/_debug )
 
 include_directories( ${CMAKE_SOURCE_DIR}/lib/ogdf/include )
 include_directories( ${CMAKE_SOURCE_DIR}/lib/eigen-eigen-bdd17ee3b1b3 )
-#include_directories( ${CMAKE_SOURCE_DIR}/lib/cxxopts/src )
+include_directories( ${CMAKE_SOURCE_DIR}/lib/cxxopts/src )
 include_directories( ${CMAKE_SOURCE_DIR}/lib/LKH/src/include )
 include_directories( ${CMAKE_SOURCE_DIR}/include )
 
