@@ -24,8 +24,8 @@ using ogdf::NodeArray;
 using std::vector;
 
 
-#define DELTA           0.01 
-#define EPSILON_ERROR   0.0001  // Close enough for government work
+#define DELTA           1E-2 // for testing inputs 
+#define EPSILON_ERROR   1E-5  // Close enough for government work
 
 // TODO parameterize data-driven tests in this file
 
@@ -47,6 +47,16 @@ TEST(WrapAngleTest, Wrap) {
     EXPECT_DOUBLE_EQ(0.0, wrapAngle(2.0*M_PI));
     EXPECT_DOUBLE_EQ(M_PI/2.0, wrapAngle(5.0*M_PI/2.0));
     EXPECT_NEAR(DELTA, wrapAngle(2.0*M_PI + DELTA), EPSILON_ERROR);
+}
+TEST(WrapAngleTest, TwoPiWraps) {
+    double input=2*M_PI;
+    double expected_output=0.0;
+    EXPECT_NEAR(expected_output, wrapAngle(input), EPSILON_ERROR);
+}
+TEST(WrapAngleTest, BoundaryWrap) {
+    double input=6.283195307179586;
+    double expected_output=0.0;
+    EXPECT_NEAR(expected_output, wrapAngle(input), EPSILON_ERROR);
 }
 
 // --------------------- headingBetween() -------------------

@@ -30,6 +30,8 @@ using Eigen::Vector2d;
 
 //#define DUBINS_DEBUG
 
+#define HEADING_TOLERANCE          1E-10 // upperbound for Euclidean metric, radius safe?
+
 #define MAX_EDGE_COST           999999.0
 
 /**
@@ -48,10 +50,26 @@ double dubinsPathLength(Configuration &Cs, Configuration &Ce, double r) {
     cout << "Given Cs=" << Cs << ", Ce=" << Ce << ", r=" << r << endl;
     cout << "Got dist=" << dist << " compared to r=" << r << "." << endl;
     #endif
+    /*
+    printf("Given Cs=(\n    %+E,\n    %+E,\n    %+.25E)\n",
+        Cs.x(), Cs.y(), Cs.heading());
+
+    printf("Given Ce=(\n    %+E,\n    %+E,\n    %+.25E)\n",
+        Ce.x(), Ce.y(), Ce.heading());
+    */
 
     if (dist < 3.0 * r) {
         std::cerr << "distance must be larger than 3*r" << endl;
         return -1.0;
+    }
+
+    // Added tolerance to avoid numerical instability for paths with no curviture
+    // TODO compute curviture as percent safe for any turn radius?
+    if (fabs(Xs - Xe) <= HEADING_TOLERANCE) {
+        #ifdef DUBINS_DEBUG
+        printf("Using straight line L=%+E. |Xs - Xe| = %+E <= %+E\n",(Pe - Ps).norm(), fabs(Xs - Xe), HEADING_TOLERANCE);
+        #endif
+        return (Pe - Ps).norm();
     }
 
     double alpha = headingToAngle(Xs),
@@ -66,10 +84,7 @@ double dubinsPathLength(Configuration &Cs, Configuration &Ce, double r) {
     Vector3d PC_rs(Cs.x(), Cs.y(), 0.0),
         PC_ls(Cs.x(), Cs.y(), 0.0),
         PC_re(Ce.x(), Ce.y(), 0.0),
-        PC_le(Ce.x(), Ce.y(), 0.0),
-        PC_rs2(Cs.x() + r*cos(Xs - M_PI/2.0),
-               Cs.y() + r*sin(Xs - M_PI/2.0),
-               0.0);
+        PC_le(Ce.x(), Ce.y(), 0.0);
 
     PC_rs = PC_rs.transpose() + r*R_rs.transpose();
     PC_ls = PC_ls.transpose() + r*R_ls.transpose();
@@ -78,7 +93,6 @@ double dubinsPathLength(Configuration &Cs, Configuration &Ce, double r) {
 
     #ifdef DUBINS_DEBUG
     cout << "PC_rs " << PC_rs << "." << endl;
-    cout << "PC_rs2 " << PC_rs2 << "." << endl;
     cout << "PC_ls " << PC_ls << "." << endl;
     cout << "PC_re " << PC_re << "." << endl;
     cout << "PC_le " << PC_le << "." << endl;
@@ -86,9 +100,30 @@ double dubinsPathLength(Configuration &Cs, Configuration &Ce, double r) {
 
     // Case I, R-S-R
     double x = headingBetween(PC_rs, PC_re);
-    double L1 = (PC_rs - PC_re).norm() + r*wrapAngle(2.0 * M_PI + wrapAngle(x - M_PI/2.0)
-        - wrapAngle(Xs - M_PI/2.0)) + r*wrapAngle(2.0*M_PI + wrapAngle(Xe - M_PI/2.0)
-        - wrapAngle(x - M_PI/2.0));
+    //printf("norm(c_rs - c_re)=%+E \nr*wrap1=%+E\n r*wrap2=%0.9f\n",(PC_rs - PC_re).norm(),
+    //    r*wrapAngle(2.0 * M_PI + wrapAngle(x - M_PI/2.0) - wrapAngle(Xs - M_PI/2.0)),
+    //    r*wrapAngle(2.0*M_PI + wrapAngle(Xe - M_PI/2.0) - wrapAngle(x - M_PI/2.0)));
+    // printf("r*wrap2: wrapAngle(Xe - M_PI/2.0)=%+E, wrapAngle(x - M_PI/2.0)=%+E\n",
+    //    wrapAngle(Xe - M_PI/2.0), wrapAngle(x - M_PI/2.0));
+    /*
+    printf("CW: Xe - X = %+E\n", wrapAngle(Xe - M_PI/2.0) - wrapAngle(x - M_PI/2.0));
+    printf("CW: X - Xe = %+E\n", wrapAngle(x - M_PI/2.0) - wrapAngle(Xe - M_PI/2.0));
+    printf("CW: Xe = %+E\n", wrapAngle(Xe - M_PI/2.0));
+    printf("CW: X = %+E\n", wrapAngle(x - M_PI/2.0));
+    printf("Norm = %+E\n",(PC_rs - PC_re).norm() );
+    */
+
+    double L1 = (PC_rs - PC_re).norm() 
+        + r*wrapAngle(2.0 * M_PI + wrapAngle(x - M_PI/2.0) - wrapAngle(Xs - M_PI/2.0))
+        + r*wrapAngle(2.0 * M_PI + wrapAngle(Xe - M_PI/2.0) - wrapAngle(x - M_PI/2.0));
+
+/*
+    printf("L1 = %+E\n    + %+E\n    +%+E\n\n = %+E\n",
+        (PC_rs - PC_re).norm() ,
+         r*wrapAngle(2.0 * M_PI + wrapAngle(x - M_PI/2.0) - wrapAngle(Xs - M_PI/2.0)),
+         r*wrapAngle(2.0 * M_PI + wrapAngle(Xe - M_PI/2.0) - wrapAngle(x - M_PI/2.0)),
+        L1);
+        */
 
     #ifdef DUBINS_DEBUG
     std::cout << "L1: " << L1 << ", with x=" << x << endl;
@@ -103,8 +138,6 @@ double dubinsPathLength(Configuration &Cs, Configuration &Ce, double r) {
         - wrapAngle(Xe + M_PI/2.0));
     #ifdef DUBINS_DEBUG
     std::cout << "L2: " << L2 << " with ls=" << ls << ", x=" << x << ", x2=" << x2 << endl;
-    std::cout << "Wrap11="<<wrapAngle(x2)<<", wrap12="<<wrapAngle(Xs-M_PI/2.0)<<" wrap1="
-        <<r*wrapAngle(2.0*M_PI + wrapAngle(x2) - wrapAngle(Xs-M_PI/2.0)) << endl;
     #endif
 
     // Case III, L-S-R
@@ -209,6 +242,9 @@ double createDubinsTourEdges(ogdf::Graph &G, ogdf::GraphAttributes &GA,
         Configuration Cu(GA.x(u), GA.y(u), X(u)),
                       Cv(GA.x(v), GA.y(v), X(v));
         double cost = dubinsPathLength(Cu, Cv, r);
+
+        //printf("Found cost %0.1f from node %d->%d, where headings %d: %0.1f, %d: %0.1f\n",
+        //    cost, GA.idNode(u), GA.idNode(v), GA.idNode(u), X(u), GA.idNode(v), X(v));
 
         // Add the edge
         ogdf::edge e = G.newEdge(u,v);

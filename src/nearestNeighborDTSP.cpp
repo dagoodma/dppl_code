@@ -15,6 +15,8 @@
 #include <ogdf/basic/GraphAttributes.h>
 #include <ogdf/fileformats/GraphIO.h>
 
+#include <cxxopts.h>
+
 #include "Log.h"
 #include "Dubins.h"
 #include "Configuration.h"
@@ -135,7 +137,7 @@ int solveNearestNeighborDTSP(Graph &G, GraphAttributes &GA, double x, double r,
     double cost_return = dubinsPathLength(C, Cs, r);
     cost = total_cost + cost_return;
     edge e = G.newEdge(u, nodeStart);
-    GA.doubleWeight(e) = cost;
+    GA.doubleWeight(e) = cost_return;
     edges.pushBack(e);
     tour.pushBack(nodeStart);
 
@@ -144,10 +146,10 @@ int solveNearestNeighborDTSP(Graph &G, GraphAttributes &GA, double x, double r,
     FILE_LOG(logDEBUG) << "Finished solving with cost " << cost << ".";
 
     FILE_LOG(logDEBUG) << "Finished (" <<  elapsedTime << "ms).";
-    cout << "Computed TSP solution in " <<  elapsedTime << "ms." << endl;
    
     // Print headings
     #ifdef DEBUG
+    cout << "Computed TSP solution in " <<  elapsedTime << "ms." << endl;
     cout << "Headings: " << endl;
     forall_nodes(u,G) {
         cout << "   Node " << GA.idNode(u) << ": " << heading[u] << " rad." << endl;
@@ -198,14 +200,47 @@ int main(int argc, char *argv[]) {
     Output2FILE::Stream() = log_fd;
     FILE_LOG(logDEBUG) << "Started.";
 
-    // Read arguments
-    if (argc != 4) {
-        cerr << "Expected 3 arguments." << endl;
-        return 1;
+
+    // Input and options
+    string inputFilename;
+    double x, r;
+    bool debug = false;
+
+    // Option parsing
+    cxxopts::Options options(program_name,
+        " gml_file initial_heading turn_radius");
+    try {
+        options.add_options()
+            ("d,debug", "Enable debugging messages", cxxopts::value<bool>(debug))
+            ("h,help", "Print this message");
+            //("", "x is the initial heading")
+            //("", "r is the turn radius of the Dubins vehicle");
+            //("inputGMLFile", "Input GML file to read graph from", cxxopts::value<string>(), "INPUT_GML_FILE")
+            //("initialHeading", "Initial heading orientation", cxxopts::value<string>(), "INITIAL_HEADING")
+            //("turnRadius", "Dubins vehicle turning radius", cxxopts::value<string>(), "TURN_RADIUS");
+
+        //options.parse_positional({"inputGMLFile"});
+        options.parse(argc, argv);
+
+        if (options.count("help")) {
+            std::cout << options.help() << std::endl;
+            return 0;
+        }
+
+        if (argc != 4) {
+            std::cout << program_name << ": " << " Expected 3 arguments." << std::endl;
+            std::cout << options.help();
+            exit(1);
+        }
+
+    } catch (const cxxopts::OptionException& e) {
+        std::cout << "error parsing options: " << e.what() << std::endl;
+        exit(1);
     }
-    string inputFilename(argv[1]);
-    double x = atof(argv[2]);
-    double r = atof(argv[3]);
+
+    inputFilename = argv[1];
+    x = atof(argv[2]);
+    r = atof(argv[3]);
 
     // Read input gml file
     Graph G;
@@ -239,6 +274,8 @@ int main(int argc, char *argv[]) {
         cerr << "Nearest neighbor algorithm failed" << endl;
         return 1;
     }
+
+    // Print results
     cout << "Solved " << n << " point tour with cost " << cost << "." << endl;
 
     // Print edges

@@ -24,7 +24,7 @@
 #include "Util.h"
 #include "TSPLib.h"
 
-#define DEBUG
+//#define DEBUG
 
 // Enable stack traces in debug mode
 #ifdef DEBUG
@@ -55,6 +55,8 @@ void alternatingAlgorithm(Graph &G, GraphAttributes &GA, List<node> &tour,
     #ifdef DEBUG
     cout << "Tour: " << endl;
     #endif
+    // We don't want to iterate over the last point in the tour, since we're
+    // looking at each node's successor. Hence: i < tour.size()
     for ( iter = tour.begin(); (i < tour.size() && iter != tour.end()); iter++ ) {
         node u = *iter, v = *(iter.succ());
 
@@ -155,11 +157,11 @@ int solveAlternatingDTSP(Graph &G, GraphAttributes &GA, double x, double r,
     // Apply alternating algorithm
     alternatingAlgorithm(G, GA, tour, headings, r);
     cost = createDubinsTourEdges(G, GA, tour, headings, r, edges, true); // TODO add return cost input
-    cout << "Solved " << n << " point tour with cost " << cost << "." << endl;
    
     // Print headings
     #ifdef DEBUG
     node u;
+    cout << "Solved " << n << " point tour with cost " << cost << "." << endl;
     cout << "Headings: " << endl;
     forall_nodes(u,G) {
         cout << "   Node " << GA.idNode(u) << ": " << headings[u] << " rad." << endl;
@@ -232,7 +234,7 @@ int main(int argc, char *argv[]) {
 
     // Option parsing
     cxxopts::Options options(program_name,
-        " GMLFILE INITIAL_HEADING TURN_RADIUS - alternating algorithm for DTSP problem");
+        " gml_file initial_heading turn_radius");
     try {
         options.add_options()
             ("d,debug", "Enable debugging messages", cxxopts::value<bool>(debug))
@@ -252,9 +254,8 @@ int main(int argc, char *argv[]) {
         }
 
         if (argc != 4) {
-            std::cout << program_name << ": " << " Expected 3 arguments." << std::endl
-                << std::endl;
-            std::cout << options.help() << std::endl;
+            std::cout << program_name << ": " << " Expected 3 arguments." << std::endl;
+            std::cout << options.help();
             exit(1);
         }
 
@@ -294,6 +295,9 @@ int main(int argc, char *argv[]) {
         cerr << "Alternating algorithm failed" << endl;
         return 1;
     }
+
+    // Results
+    cout << "Solved " << G.numberOfNodes() << " point tour with cost " << cost << "." << endl;
 
     // Print edge list
     printEdges(G, GA, edges);

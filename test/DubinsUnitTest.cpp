@@ -103,6 +103,19 @@ TEST(DubinsPathLengthTest, LSL) {
     EXPECT_DOUBLE_EQ(expectedLength, dubinsPathLength(c1, c2, TURN_RADIUS));
 }
 
+TEST(DubinsPathLengthTest, SimilarHeadings) {
+    Vector2d u(450.0, 0.0),
+        v(350.0, -100.0);
+    double X = headingBetween(u,v);
+    Configuration c1(450.0, 0.0, X),
+        c2(350.0, -100.0, X);
+            // 5pi/4 = 3.9269908169872413949974543 ~ 5.0*M_PI/4.0
+
+    double expectedLength = 141.4213562373095;
+
+    EXPECT_DOUBLE_EQ(expectedLength, dubinsPathLength(c1,c2,TURN_RADIUS));
+}
+
 // Value-parameterized tests for dubinsTourCost()
 //#if GTEST_HAS_PARAM_TEST
 using ::testing::Test;
