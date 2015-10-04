@@ -53,7 +53,7 @@ using ogdf::List;
 using ogdf::ListIterator;
 using ogdf::NodeArray;
 
-#define TWO_PI    (2.0 * M_PI)
+#define TWO_PI    ((double)2.0 * M_PI)
 
 /**
  * Generates a random heading in radians from [0, 2PI) with the uniform distribution.
@@ -62,10 +62,10 @@ double randomHeading(void) {
     // Random number generator initilization
     static random_device rd;
     static default_random_engine e1(rd());
-    static uniform_int_distribution<double> uniform_dist(0, TWO_PI);
+    static uniform_real_distribution<double> uniform_dist(0, TWO_PI);
 
     // Generate the uniform random number
-    float x = uniform_dist(e1) % TWO_PI;
+    float x = fmod(uniform_dist(e1), TWO_PI);
     return x;
 }
 
@@ -86,7 +86,7 @@ void randomizeHeadings(Graph &G, GraphAttributes &GA, NodeArray<double> &Heading
     forall_nodes(i, G) {
         if (skipOrigin && i == G.firstNode()) continue; // skip the origin
         double x = randomHeading();
-        heading[i] = x;
+        Headings[i] = x;
 
         #ifdef DEBUG
         cout << "   Node " << GA.idNode(u) << ": " << x << endl;
@@ -133,7 +133,7 @@ int solveRandomizedDTSP(Graph &G, GraphAttributes &GA, double x, double r,
     // Weighted adjacency matrix from random headings
     // TODO add loop for multiple runs
     randomizeHeadings(G, GA, Headings);
-    NodeMatrix<double> A;
+    NodeMatrix<double> A(G);
     buildDubinsAdjacencyMatrix(G, GA, A, Headings, r);
 
     // Generate temporary TSP and PAR files
