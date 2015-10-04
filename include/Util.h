@@ -2,6 +2,7 @@
 #ifndef _UTIL_H
 #define _UTIL_H
 
+#include <stdlib.h>   
 #include <stdio.h>
 #include <math.h>
 
