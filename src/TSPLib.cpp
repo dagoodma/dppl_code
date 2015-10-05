@@ -17,15 +17,13 @@ void writeTSPHeader(std::ofstream& tspFile, TSPFile::ProblemType type, std::stri
         "DIMENSION: " << dimension <<  std::endl;
 }
 
-
-
 /**
  * Write a symmetric TSP file of graph G with Euclidean distance metric.
  */
 int writeETSPFile(std::string filename, std::string name, std::string comment,
     ogdf::Graph &G, ogdf::GraphAttributes &GA) {
     std::ofstream tspFile;
-    tspFile.open(filename);
+    tspFile.open(filename, std::ios_base::trunc);
     if (!tspFile.is_open()) {
         cerr << "Could not open " << filename << std::endl;
         return 1;
@@ -58,7 +56,7 @@ int writeETSPFile(std::string filename, std::string name, std::string comment,
 int writeATSPFile(std::string filename, std::string name, std::string comment, 
     ogdf::Graph &G, NodeMatrix<double> &A) {
     std::ofstream tspFile;
-    tspFile.open(filename);
+    tspFile.open(filename, std::ios_base::trunc);
     if (!tspFile.is_open()) {
         cerr << "Could not open " << filename << std::endl;
         return 1;
@@ -136,7 +134,7 @@ int writeATSPFile(std::string filename, std::string name, std::string comment,
 int writePARFile(std::string filename, std::string tspFilename, std::string outputFilename,
     int runs) {
     std::ofstream parFile;
-    parFile.open(filename);
+    parFile.open(filename, std::ios_base::trunc);
     if (!parFile.is_open()) {
         std::cerr << "Could not open " << filename << std::endl;
         return 1;
@@ -163,7 +161,13 @@ int writePARFile(std::string filename, std::string tspFilename, std::string outp
     std::ifstream tourFile;
     tourFile.open(filename);
     if (!tourFile.is_open()) {
-        cerr << "Could not open " << filename << std::endl;
+        cerr << "Could not open tour file " << filename << std::endl;
+        return 1;
+    }
+
+    if (tour.size() > 0) {
+        // TODO clear tour?
+        cerr << "Tour must be empty." << std::endl;
         return 1;
     }
 
@@ -204,8 +208,7 @@ int writePARFile(std::string filename, std::string tspFilename, std::string outp
             else if (n < 0 && std::regex_search(line, match, dimensionSection) && match.size() > 1) {
                 n = std::stoi(match.str(1));
                 if (n != nExpected) {
-                    std::cerr << "Tour contains " << n << " nodes, but expected " << nExpected << "."
-                        << std::endl;
+                    std::cerr << "Tour contains " << n << " nodes, but graph has " << nExpected << "." << std::endl;
                     return 1;
                 }
                 //std::cout << "Found dimension: " << n << std::endl;
@@ -220,7 +223,7 @@ int writePARFile(std::string filename, std::string tspFilename, std::string outp
                     if (nodeId >= 0) {
                         ogdf::node u = nodeList[nodeId];
                         if (!u) {
-                            std::cerr << "Node id " << nodeId << " does not exist." << std::endl;
+                            std::cerr << "Node id " << nodeId << " in the tour does not exist." << std::endl;
                             return 1;
                         }
                         tour.pushBack(u);
@@ -231,7 +234,8 @@ int writePARFile(std::string filename, std::string tspFilename, std::string outp
                 }
                 int nFound = tour.size();
                 if (nFound != n) {
-                    std::cerr << "Read " << nFound << " nodes, but expected " << n << "." << std::endl;
+                    std::cerr << "Found " << nFound << " nodes in tour, but expected " << n << "." << std::endl
+                        << filename;
                     return 1;
                 }
                 if (nFound > 0) {

@@ -143,11 +143,14 @@ double dubinsPathLength(Configuration &Cs, Configuration &Ce, double r) {
     // Case III, L-S-R
     ls = (PC_re - PC_ls).norm();
     x = headingBetween(PC_ls, PC_re);
-    x2 = acos(2.0*r/ls);
-    if (2.0*r/ls > 1.0 || 2.0*r/ls < -1.0) {
-        std::cerr << "angle out of range in case III" << endl;
-        return -1.0;
-    }
+    double ratioOA = 2.0*r/ls;
+    ratioOA = std::min<double> (-1.0, ratioOA);
+    ratioOA = std::max<double> (1.0, ratioOA);
+    x2 = acos(ratioOA);
+    //if (2.0*r/ls > 1.0 || 2.0*r/ls < -1.0) {
+    //    std::cerr << "angle out of range in case III" << endl;
+    //    return -1.0;
+    //}
     double L3 = sqrt(ls*ls - 4*r*r) + r*wrapAngle(2.0*M_PI + wrapAngle(Xs + M_PI/2.0) 
         - wrapAngle(x + x2)) + r*wrapAngle(2.0*M_PI + wrapAngle(Xe - M_PI/2.0)
         - wrapAngle(x + x2 - M_PI));

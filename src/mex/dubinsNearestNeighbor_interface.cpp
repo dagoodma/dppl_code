@@ -17,24 +17,24 @@ void mexFunction( int nlhs, mxArray *plhs[],
 
     /* check for proper number of arguments */
     if(nrhs!=3) {
-    mexErrMsgIdAndTxt("DubinsAreaCoverage:path:nrhs",
+    mexErrMsgIdAndTxt("DubinsSensorCoverage:path:nrhs",
                       "Three inputs required.");
     }
 
     if(nlhs!=3) {
-    mexErrMsgIdAndTxt("DubinsAreaCoverage:path:nlhs",
+    mexErrMsgIdAndTxt("DubinsSensorCoverage:path:nlhs",
                       "Three outputs required.");
     }
 
     // check that columns in V is 2 
     if(mxGetN(prhs[0])!=2) {
-        mexErrMsgIdAndTxt("DubinsAreaCoverage:V:wrongColumns",
+        mexErrMsgIdAndTxt("DubinsSensorCoverage:V:wrongColumns",
                           "V must have 2 columns.");
     }
 
     // check that rows in V is larger than 1
     if(mxGetM(prhs[0])<2) {
-        mexErrMsgIdAndTxt("DubinsAreaCoverage:V:notEnoughRows",
+        mexErrMsgIdAndTxt("DubinsSensorCoverage:V:notEnoughRows",
                           "V must have at least 2 rows.");
     }
 
@@ -42,14 +42,14 @@ void mexFunction( int nlhs, mxArray *plhs[],
     if( !mxIsDouble(prhs[1]) || 
          mxIsComplex(prhs[1]) ||
          mxGetNumberOfElements(prhs[1])!=1 ) {
-        mexErrMsgIdAndTxt("DubinsAreaCoverage:x:notScalar",
+        mexErrMsgIdAndTxt("DubinsSensorCoverage:x:notScalar",
                           "Input heading must be a scalar.");
     }
 
     if( !mxIsDouble(prhs[2]) || 
          mxIsComplex(prhs[2]) ||
          mxGetNumberOfElements(prhs[2])!=1 ) {
-        mexErrMsgIdAndTxt("DubinsAreaCoverage:r:notScalar",
+        mexErrMsgIdAndTxt("DubinsSensorCoverage:r:notScalar",
                           "Input radius must be a scalar.");
     }
 
@@ -96,8 +96,9 @@ void mexFunction( int nlhs, mxArray *plhs[],
     int result = solveNearestNeighborDTSP(G, GA, x, r, tour, edges, heading, cost);
 
     if (result != 0) {
-        mexErrMsgIdAndTxt("DubinsAreaCoverage:solver:failure",
-            "Solver failed with a non-zero return code.");
+        char buf[50];
+        sprintf(buf, "Solver failed with code: %d", result);
+        mexErrMsgIdAndTxt("DubinsSensorCoverage:solver:failure", buf);
     }
 
     //int m = tour.size() - 1;

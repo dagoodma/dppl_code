@@ -16,6 +16,8 @@
 #include <fstream>
 #include <stdio.h>
 #include <stdbool.h>
+#include <stdexcept>
+#include <cassert>
 
 #include <random>
 #include <cmath>
@@ -24,7 +26,7 @@
 #include <ogdf/basic/GraphAttributes.h>
 #include <ogdf/fileformats/GraphIO.h>
 
-#include <LKH.h>
+//#include <LKH.h>
 #include <cxxopts.h>
 
 #include "Log.h"
@@ -33,7 +35,7 @@
 #include "Util.h"
 #include "TSPLib.h"
 
-//#define DEBUG
+#define DEBUG
 
 // Enable stack traces in debug mode
 #ifdef DEBUG
@@ -55,6 +57,26 @@ using ogdf::NodeArray;
 
 #define TWO_PI    ((double)2.0 * M_PI)
 
+#define ALGORITHM_ITERATIONS            10 // number of iterations
+
+/**
+ * Makes a system call to run the LKH solver.
+ * Throws a runtime exception if the solver fails.
+ * @return SUCCESS or FAILURE
+ */
+int runLKHSolver(string parFilename) {
+    int result = FAILURE;
+    string cmd = "LKH ";
+    cmd += parFilename;
+    result = system(const_cast<char*>(cmd.c_str()));
+
+    if (result != SUCCESS) {
+        throw runtime_error(string("LKH solver failed with code: ") + to_string(result));
+    }
+  
+    return result;
+}
+
 /**
  * Generates a random heading in radians from [0, 2PI) with the uniform distribution.
  */
@@ -66,6 +88,7 @@ double randomHeading(void) {
 
     // Generate the uniform random number
     float x = fmod(uniform_dist(e1), TWO_PI);
+    assert(0.0 <= x < TWO_PI);
     return x;
 }
 
@@ -89,7 +112,7 @@ void randomizeHeadings(Graph &G, GraphAttributes &GA, NodeArray<double> &Heading
         Headings[i] = x;
 
         #ifdef DEBUG
-        cout << "   Node " << GA.idNode(u) << ": " << x << endl;
+        cout << "   Node " << GA.idNode(i) << ": " << x << endl;
         #endif
     }
 }
@@ -102,13 +125,13 @@ void randomizeHeadings(Graph &G, GraphAttributes &GA, NodeArray<double> &Heading
  * @param x         a starting heading in radians [0,2*pi)
  * @param r         a turning radius in radians
  * @param tour      a list of nodes to hold the result
- * @param edges     a list of edges to hold the result
+ * @param Edges     a list of edges to hold the result
  * @param Headings  a node array of headings to hold the result
  * @param cost      holds the total cost result
  * @return An exit code (0==SUCCESS)
  */
 int solveRandomizedDTSP(Graph &G, GraphAttributes &GA, double x, double r,
-    List<node> &tour, List<edge> &edges, NodeArray<double> &Headings, double &cost) {
+    List<node> &Tour, List<edge> &Edges, NodeArray<double> &Headings, double &cost) {
 
     if (x < 0.0 || x >= M_PI*2.0) {
         cerr << "Expected x to be between 0 and 2*PI." << endl;
@@ -130,13 +153,9 @@ int solveRandomizedDTSP(Graph &G, GraphAttributes &GA, double x, double r,
 
     FILE_LOG(logDEBUG) << "Found " << n << " nodes, and " << m << " edges.";
 
-    // Weighted adjacency matrix from random headings
-    // TODO add loop for multiple runs
-    randomizeHeadings(G, GA, Headings);
-    NodeMatrix<double> A(G);
-    buildDubinsAdjacencyMatrix(G, GA, A, Headings, r);
 
     // Generate temporary TSP and PAR files
+    Headings(G.firstNode()) = x;
     string problemComment("Asymmetric TSP problem with ");
     problemComment += to_string(n) + " nodes.";
     string problemName("prDubinsScenario");
@@ -144,38 +163,71 @@ int solveRandomizedDTSP(Graph &G, GraphAttributes &GA, double x, double r,
     string parFilename = (std::tmpnam(nullptr) + string(PAR_FILE_EXTENSION)),
         tspFilename = (std::tmpnam(nullptr) + string(TSP_FILE_EXTENSION)),
         tourFilename = (std::tmpnam(nullptr) + string(TSP_FILE_EXTENSION));
-    if (writePARFile(parFilename,tspFilename, tourFilename) != SUCCESS
-        || writeATSPFile(tspFilename, problemName, problemComment, G, A) != SUCCESS) {
-        cerr << "Failed creating TSP files." << endl;
-        return 1;
-    }
 
-    FILE_LOG(logDEBUG) << "Wrote " << parFilename << " and " << tspFilename << ".";
-    FILE_LOG(logDEBUG) << "Running LKH solver for Asymmetric TSP.";
+    // Find the best configuration over many iterations
+    List<node> BestTour;
+    NodeArray<double> BestHeadings;
+    double bestCost = -1;
+    for (int i = 0; i < ALGORITHM_ITERATIONS; i++) {
+        // Generate weighted adjacency matrix from random headings
+        randomizeHeadings(G, GA, Headings);
+        NodeMatrix<double> A(G);
+        buildDubinsAdjacencyMatrix(G, GA, A, Headings, r);
 
-    // Find ATSP solution with LKH. Saves into tourFilename
-    Timer *t1 = new Timer();
-    try { 
-        LKH::runSolver(const_cast<char*>(parFilename.c_str()));
-    } catch(const std::exception& e) { 
-        cerr << "LKH solver failed with an exception: " << endl << e.what() << endl;
-        FILE_LOG(logDEBUG) << "LKH exception: " << e.what();
-        return 1;
-    }
-    float elapsedTime = t1->diffMs();
 
-    FILE_LOG(logDEBUG) << "Finished (" <<  elapsedTime << "ms)."
-        << " Optimal euclidean tour in " << tourFilename << ".";
-    cout << "Computed Euclidean TSP solution in " <<  elapsedTime << "ms."
-        << endl << "Tour saved in " << tourFilename << "." << endl;
+        if (writePARFile(parFilename,tspFilename, tourFilename) != SUCCESS
+            || writeATSPFile(tspFilename, problemName, problemComment, G, A) != SUCCESS) {
+            cerr << "Failed creating TSP files." << endl;
+            return 1;
+        }
 
-    // Read LKH solution from tour file
-    if (readTSPTourFile(tourFilename, G, GA, tour) != SUCCESS) {
-        return 1;
-    }
+        FILE_LOG(logDEBUG) << "Wrote " << parFilename << " and " << tspFilename << ".";
+        FILE_LOG(logDEBUG) << "Running LKH solver for Asymmetric TSP.";
+
+        // Find ATSP solution with LKH. Saves into tourFilename
+        Timer *t1 = new Timer();
+        try {
+            runLKHSolver(parFilename);
+        } catch(const std::exception& e) { 
+            cerr << e.what() << endl;
+            FILE_LOG(logDEBUG) << e.what();
+            return FAILURE;
+        }
+        float elapsedTime = t1->diffMs();
+
+        FILE_LOG(logDEBUG) << "Finished (" <<  elapsedTime << "ms)."
+            << " Sub-Optimal asymmetric tour " << i << " in " << tourFilename << ".";
+        #ifdef DEBUG
+        cout << i << ": Computed Asymmetric TSP solution in " <<  elapsedTime << "ms."
+            << endl << "Tour saved in " << tourFilename << "." << endl;
+        #endif
+
+        // Read LKH solution from tour file
+        if (readTSPTourFile(tourFilename, G, GA, Tour) != SUCCESS) {
+            cerr << "Could not read solution from LKH tour file!" << endl;
+            FILE_LOG(logDEBUG) << "Could not read solution from LKH tour file!" << endl;
+            return 1;
+        }
+
+        double cost_i = dubinsTourCost(G, GA, Tour, Headings, r, true);
+
+        // Save the best scenario
+        if (cost_i < bestCost || bestCost < 0) {
+            bestCost = cost_i;
+            BestHeadings = Headings;
+            BestTour = Tour;
+        }
+        Tour.clear();
+            
+    } // for (int i = 0; i < ALGORITHM_ITERATIONS; i++) 
+
+    // Use the best scenario
+    cost = bestCost;
+    Headings = BestHeadings;
+    Tour = BestTour;
 
     // Create edges
-    cost = createDubinsTourEdges(G, GA, tour, Headings, r, edges, true); // TODO add return cost parameter  to main
+    cost = createDubinsTourEdges(G, GA, Tour, Headings, r, Edges, true); // TODO add return cost parameter  to main
     
     // Print headings
     #ifdef DEBUG
@@ -205,20 +257,20 @@ int solveRandomizedDTSP(Graph &G, GraphAttributes &GA, double x, double r,
  * Constructor that doesn't take a tour argument.
  */
 int solveRandomizedDTSP(Graph &G, GraphAttributes &GA, double x, double r,
-    List<edge> &edges, NodeArray<double> &Headings, double &cost) {
+    List<edge> &Edges, NodeArray<double> &Headings, double &cost) {
 
-    List<node> tour;
-    return solveRandomizedDTSP(G, GA, x, r, tour, edges, Headings, cost);
+    List<node> Tour;
+    return solveRandomizedDTSP(G, GA, x, r, Tour, Edges, Headings, cost);
 }
 
 /**
  * Constructor that doesn't take an edge list argument.
  */
 int solveRandomizedDTSP(Graph &G, GraphAttributes &GA, double x, double r,
-    List<node> &tour, NodeArray<double> &Headings, double &cost) {
+    List<node> &Tour, NodeArray<double> &Headings, double &cost) {
 
-    List<edge> edges;
-    return solveRandomizedDTSP(G, GA, x, r, tour, edges, Headings, cost);
+    List<edge> Edges;
+    return solveRandomizedDTSP(G, GA, x, r, Tour, Edges, Headings, cost);
 }
 
 
@@ -306,12 +358,12 @@ int main(int argc, char *argv[]) {
     }
     FILE_LOG(logDEBUG) << "Opened " << inputFilename << "." << endl;
 
-    List<node> tour;
-    List<edge> edges;
+    List<node> Tour;
+    List<edge> Edges;
     double cost;
     NodeArray<double> Headings(G);
 
-    if (solveRandomizedDTSP(G, GA, x, r, tour, edges, Headings, cost) != SUCCESS) {
+    if (solveRandomizedDTSP(G, GA, x, r, Tour, Edges, Headings, cost) != SUCCESS) {
         cerr << "Randomized algorithm failed" << endl;
         return 1;
     }
@@ -320,7 +372,7 @@ int main(int argc, char *argv[]) {
     cout << "Solved " << G.numberOfNodes() << " point tour with cost " << cost << "." << endl;
 
     // Print edge list
-    printEdges(G, GA, edges);
+    printEdges(G, GA, Edges);
 
     return 0;
 

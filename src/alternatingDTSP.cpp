@@ -80,9 +80,8 @@ void alternatingAlgorithm(Graph &G, GraphAttributes &GA, List<node> &tour,
 }
 
 /**
- * Solves the alternating salesman DTSP, saving the tour, headings, and total
- * cost into the given variables respectively.
- *
+ * Solves the DTSP with the alternating algorithm. The tour, headings, and total
+ * cost are saved into their respective parameters.
  * @param G         a graph of the problem
  * @param GA        attributes of graph
  * @param x         a starting heading in radians [0,2*pi)
