@@ -1,20 +1,22 @@
-#ifndef _NODEMATRIX_H_
-#define _NODEMATRIX_H_
+#ifndef _DPP_NODE_MATRIX_H_
+#define _DPP_NODE_MATRIX_H_
 
 #include <ogdf/basic/Graph.h>
 #include <ogdf/basic/GraphAttributes.h>
+
+#include <dpp/basic/basic.h>
+
+namespace dpp {
 
 template <class T>
 class NodeMatrix
 {
 public:
     NodeMatrix() {
-        //m_data = nullptr;
         m_nodes = 0;
     }
  
     NodeMatrix( ogdf::Graph &G ) {
-        //m_data = nullptr;
         allocate( G );
     }
 
@@ -61,8 +63,7 @@ private:
         m_graph = &G;
 
         m_data = new ogdf::NodeArray<ogdf::NodeArray<T>>(G);
-        //m_data(G);
-        //new *nodeArray<T>[m_nodes];
+
         ogdf::node i;
         forall_nodes(i, G) {
             (*m_data)[i] = ogdf::NodeArray<T>(G);
@@ -72,20 +73,8 @@ private:
     }
 
     void deallocate() {
-        /*if (nullptr == m_data) {
-            return;
-        }
-        */
-
-        // Do we need this loop?
-        ogdf::node i;
-        forall_nodes(i, *m_graph) {
-            //delete m_data[i]);
-        }
         delete m_data;
-
         m_nodes = 0;
-        //m_data = nullptr;
     }
 
     // Attributes
@@ -94,5 +83,7 @@ private:
     const ogdf::Graph *m_graph;
 };
 
-#endif // _NODEMATRIX_H_
+} // namespace dpp
+
+#endif // _DPP_NODE_MATRIX_H_
 

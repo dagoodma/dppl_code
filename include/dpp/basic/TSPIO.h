@@ -1,15 +1,14 @@
-#ifndef _TSPLIB_H_
-#define _TSPLIB_H_
+#ifndef _DPP_TSPIO_H_
+#define _DPP_TSPIO_H_
 
-#include <ogdf/basic/Graph.h>
-#include <ogdf/basic/GraphAttributes.h>
-
-#include "NodeMatrix.h"
+#include <dpp/basic/NodeMatrix.h>
 
 #define TSP_FILE_EXTENSION ".tsp"
 #define PAR_FILE_EXTENSION ".par"
 
-class TSPFile {
+namespace dpp {
+
+class TSPIO {
     public:
         enum ProblemType { ETSP, ATSP, HCP };
         static const char *ProblemTypeText[];
@@ -38,6 +37,8 @@ int writeETSPFile(std::string filename, std::string name, std::string comment,
 int writePARFile(std::string filename, std::string tspFilename, std::string outputFilename, int runs=10);
 
 int readTSPTourFile(std::string filename, ogdf::Graph &G, ogdf::GraphAttributes &GA,
-    ogdf::List<ogdf::node> &tour);
+    ogdf::List<ogdf::node> &tour, bool returnToInitial=true);
 
-#endif // _TSPLIB_H_
+} // namespace dpp
+
+#endif // _DPP_TSPIO_H_

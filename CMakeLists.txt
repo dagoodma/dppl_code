@@ -25,26 +25,34 @@ endif()
 #set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
 ## Paths to includes and libraries
-link_directories( ${CMAKE_SOURCE_DIR}/lib/LKH )
 link_directories( ${CMAKE_SOURCE_DIR}/lib/ogdf/_debug )
 
+# External library includes
 include_directories( ${CMAKE_SOURCE_DIR}/lib/ogdf/include )
 include_directories( ${CMAKE_SOURCE_DIR}/lib/eigen-eigen-bdd17ee3b1b3 )
 include_directories( ${CMAKE_SOURCE_DIR}/lib/cxxopts/src )
-include_directories( ${CMAKE_SOURCE_DIR}/lib/LKH/src/include )
+# DPP includes
 include_directories( ${CMAKE_SOURCE_DIR}/include )
-
-## Add subdirectories
-add_subdirectory( src )
-add_subdirectory( test )
+include_directories( ${CMAKE_SOURCE_DIR}/include/dpp )
+include_directories( ${CMAKE_SOURCE_DIR}/include/dpp/basic )
+include_directories( ${CMAKE_SOURCE_DIR}/include/dpp/planner )
+include_directories( ${CMAKE_SOURCE_DIR}/include/dpp/planalg )
 
 ## Add Compiler Flags
 
 # OSX
 add_definitions("-fno-pie")
 
-#SET( CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${GCC_COVERAGE_COMPILE_FLAGS} -g" )
+# Debug flags
+if ( CMAKE_BUILD_TYPE MATCHES Debug )
+    message( "Compiling DPP in debug mode." )
+    set(GCC_DPP_DEBUG_COMPILE_FLAGS "-DDPP_DEBUG")
+    set( CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${GCC_COVERAGE_COMPILE_FLAGS} ${GCC_DPP_DEBUG_COMPILE_FLAGS}" )
+endif ( CMAKE_BUILD_TYPE MATCHES Debug )
 
+## Add subdirectories
+add_subdirectory( src )
+#add_subdirectory( test )
 
 # the compiler used for C files 
 MESSAGE( STATUS "CMAKE_C_COMPILER: " ${CMAKE_C_COMPILER} )
@@ -57,3 +65,6 @@ MESSAGE( STATUS "CMAKE_COMPILER_IS_GNUCC: " ${CMAKE_COMPILER_IS_GNUCC} )
 
 # if the compiler is a variant of g++, this should be set to 1 
 MESSAGE( STATUS "CMAKE_COMPILER_IS_GNUCXX : " ${CMAKE_COMPILER_IS_GNUCXX} )
+
+MESSAGE( STATUS "CXX Compiler flags: " ${CMAKE_CXX_FLAGS} )
+

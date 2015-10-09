@@ -1,15 +1,25 @@
+/*
+ * TSPlib file input/output functions for reading and writing TSP and PAR files.
+ *
+ * Copyright (C) 2014-2015 DubinsPathPlanner.
+ * Created by David Goodman <dagoodma@gmail.com>
+ * Redistribution and use of this file is allowed according to the terms of the MIT license.
+ * For details see the LICENSE file distributed with DubinsPathPlanner.
+ */
 #include <stdio.h>
 #include <regex>
 #include <stdbool.h>
 
-#include "TSPLib.h"
-#include "stacktrace.h"
+#include <dpp/basic/TSPIO.h>
+#include <dpp/basic/Logger.h>
 
-const char* TSPFile::ProblemTypeText[] = { "TSP", "ATSP", "HCP" };
+namespace dpp {
 
-void writeTSPHeader(std::ofstream& tspFile, TSPFile::ProblemType type, std::string name,
+const char* TSPIO::ProblemTypeText[] = { "TSP", "ATSP", "HCP" };
+
+void writeTSPHeader(std::ofstream& tspFile, TSPIO::ProblemType type, std::string name,
     std::string comment, int dimension) {
-    std::string typeStr = TSPFile::ProblemTypeText[type];
+    std::string typeStr = TSPIO::ProblemTypeText[type];
     tspFile << 
         "NAME: " << name << std::endl << 
         "TYPE: " << typeStr << std::endl <<
@@ -25,13 +35,13 @@ int writeETSPFile(std::string filename, std::string name, std::string comment,
     std::ofstream tspFile;
     tspFile.open(filename, std::ios_base::trunc);
     if (!tspFile.is_open()) {
-        cerr << "Could not open " << filename << std::endl;
-        return 1;
+        Logger::logError() << "Could not open " << filename << "." << std::endl;
+        return FAILURE;
     }
 
     // Write the header, then the data section
     int n = G.numberOfNodes();
-    writeTSPHeader(tspFile, TSPFile::ProblemType::ETSP, name, comment, n);
+    writeTSPHeader(tspFile, TSPIO::ProblemType::ETSP, name, comment, n);
     tspFile <<
         "EDGE_WEIGHT_TYPE: EUC_2D" << std::endl <<
         "NODE_COORD_SECTION" << std::endl << std::scientific;
@@ -39,14 +49,16 @@ int writeETSPFile(std::string filename, std::string name, std::string comment,
 
     ogdf::node i;
     int i_offset = 0;
-    if (G.firstNode()->index() < 1) i_offset++;
+    if (G.firstNode()->index() < 1) 
+        i_offset++;
+    
     forall_nodes(i, G) {
         tspFile << (i->index() + i_offset) << " " << GA.x(i) << " " << GA.y(i) << std::endl;
     }
 
     tspFile << "EOF";
     tspFile.close();
-    return 0;
+    return SUCCESS;
 }
 
 
@@ -58,13 +70,13 @@ int writeATSPFile(std::string filename, std::string name, std::string comment,
     std::ofstream tspFile;
     tspFile.open(filename, std::ios_base::trunc);
     if (!tspFile.is_open()) {
-        cerr << "Could not open " << filename << std::endl;
-        return 1;
+        Logger::logError() << "Could not open " << filename << "." << std::endl;
+        return FAILURE;
     }
 
     // Write the header, then the data section
     int n = A.numberOfNodes();
-    writeTSPHeader(tspFile, TSPFile::ProblemType::ATSP, name, comment, n);
+    writeTSPHeader(tspFile, TSPIO::ProblemType::ATSP, name, comment, n);
     tspFile <<
         "EDGE_WEIGHT_TYPE: EXPLICIT" << std::endl <<
         "EDGE_WEIGHT_FORMAT: FULL_MATRIX" << std::endl <<
@@ -81,54 +93,8 @@ int writeATSPFile(std::string filename, std::string name, std::string comment,
 
     tspFile << "EOF";
     tspFile.close();
-    return 0;
+    return SUCCESS;
 }
-
-
-/**
- * Write an asymmetrical TSP file using A.
- */
-
-/*
-int writeATSPFile(std::string filename, std::string name, std::string comment, 
-    ogdf::Graph &G, NodeMatrix<double> &A) {
-    ofstream tspFile;
-    tspFile.open(filename);
-    if (!tspFile.is_open()) {
-        cerr << "Could not open " << filename << std::endl;
-        return 1;
-    }
-
-    // Find largest number of digits
-    int nDigits = 12; // eg. 3.14159e+000, 2.00600e+003
-    int n = A.numberOfNodes();
-    //cout << "HERE at line " << __LINE__ << " in file " << __FILE__ << "." << std::endl;
-
-    tspFile << 
-        "NAME: " << name << std::endl << 
-        "TYPE: ATSP" << std::endl <<
-        "COMMENT: " << comment << std::endl <<
-        "DIMENSION: " << n <<  std::endl <<
-        "EDGE_WEIGHT_TYPE: EXPLICIT" << std::endl <<
-        "EDGE_WEIGHT_FORMAT: FULL_MATRIX" << std::endl <<
-        "EDGE_WEIGHT_SECTION" << std::endl << std::fixed;
-    tspFile.precision(0); 
-
-    ogdf::node i, j;
-    //Graph G = *A.graphOf();
-    forall_nodes(i, G) {
-        forall_nodes(j, G) {
-            tspFile << " " << A[i][j];
-        }
-        tspFile << std::endl;
-    }
-
-    tspFile << "EOF";
-    tspFile.close();
-    return 0;
-}
-*/
-
 
 
 int writePARFile(std::string filename, std::string tspFilename, std::string outputFilename,
@@ -136,8 +102,8 @@ int writePARFile(std::string filename, std::string tspFilename, std::string outp
     std::ofstream parFile;
     parFile.open(filename, std::ios_base::trunc);
     if (!parFile.is_open()) {
-        std::cerr << "Could not open " << filename << std::endl;
-        return 1;
+        Logger::logError() << "Could not open " << filename << "." << std::endl;
+        return FAILURE;
     }
 
     parFile <<
@@ -150,33 +116,32 @@ int writePARFile(std::string filename, std::string tspFilename, std::string outp
         "RUNS = " << runs << std::endl;
 
     parFile.close();
-    return 0;
+    return SUCCESS;
 }
 
 /**
  * Reads a TSP tour file into G and GA using the reference Graph and attributes.
  */
  int readTSPTourFile(std::string filename, ogdf::Graph &G, ogdf::GraphAttributes &GA,
-    ogdf::List<ogdf::node> &tour) {
+    ogdf::List<ogdf::node> &tour, bool returnToInitial) {
     std::ifstream tourFile;
     tourFile.open(filename);
     if (!tourFile.is_open()) {
-        cerr << "Could not open tour file " << filename << std::endl;
-        return 1;
+        Logger::logError() << "Could not open tour " << filename << "." << std::endl;
+        return FAILURE;
     }
 
     if (tour.size() > 0) {
-        // TODO clear tour?
-        cerr << "Tour must be empty." << std::endl;
-        return 1;
+        Logger::logWarn() << "Gave non-empty tour." << std::endl;
     }
 
     // Build node lookup list
     ogdf::node nodeList[G.maxNodeIndex()], i;
+    int maxNodeId = -1;
     forall_nodes(i,G) {
         int id = GA.idNode(i);
         nodeList[id] = i;
-        //std::cout << "Added node " << (long int)i << " at " << id << "." << std::endl;
+        if (id > maxNodeId) maxNodeId = id;
     }
 
     // Regex patterns for parsing
@@ -195,24 +160,25 @@ int writePARFile(std::string filename, std::string tspFilename, std::string outp
     std::smatch match;
     try {
         while ( getline (tourFile,line)) {
+            // Look for the name section
             if (!foundName && std::regex_search(line, match, nameSection) && match.size() > 1) {
                 name = match.str(1);
                 foundName = true;
-                //std::cout << "Found name: " << name << std::endl;
             }
+            // Look for the comment section (cost/length)
             else if (!foundComment && std::regex_search(line, match, commentSection) && match.size() > 1) {
                 comment = match.str(1);
                 foundComment = true;
-                //std::cout << "Found comment: " << comment << std::endl;
             }
+            // Look for dimension section
             else if (n < 0 && std::regex_search(line, match, dimensionSection) && match.size() > 1) {
                 n = std::stoi(match.str(1));
                 if (n != nExpected) {
-                    std::cerr << "Tour contains " << n << " nodes, but graph has " << nExpected << "." << std::endl;
-                    return 1;
+                    Logger::logError() << "Tour contains " << n << " nodes, but graph has " << nExpected << "." << std::endl;
+                    return FAILURE;
                 }
-                //std::cout << "Found dimension: " << n << std::endl;
             }
+            // Look for the tour list
             else if (!foundTour && std::regex_search(line, match, tourSection)) {
                 foundTour = true;
                 // Read the points
@@ -220,58 +186,59 @@ int writePARFile(std::string filename, std::string tspFilename, std::string outp
                     //std::cout << "Running stoi on: " << line << std::endl;
                     int nodeId = std::stoi(line); // - 1;
                     //std::cout << "Considering " << nodeId << std::endl;
+                    if (nodeId < -1 || nodeId > maxNodeId) {
+                        Logger::logError() << "Out of range node id " << nodeId << " in tour file." << std::endl;
+                        return FAILURE;
+                    }
                     if (nodeId >= 0) {
                         ogdf::node u = nodeList[nodeId];
                         if (!u) {
-                            std::cerr << "Node id " << nodeId << " in the tour does not exist." << std::endl;
-                            return 1;
+                            Logger::logError() << "Node id " << nodeId << " in the tour does not exist." << std::endl;
+                            return FAILURE;
                         }
                         tour.pushBack(u);
-
-                        //std::cout << "Pushed node " << (long int)(u) << ", id = " << nodeId << "." << std::endl;
-                        //std::cout << "Pushed node " << nodeId << "." << std::endl;
                     }
                 }
                 int nFound = tour.size();
                 if (nFound != n) {
-                    std::cerr << "Found " << nFound << " nodes in tour, but expected " << n << "." << std::endl
-                        << filename;
-                    return 1;
+                    Logger::logError() << "Found " << nFound << " nodes in tour, but expected " << n << "." << std::endl;
+                    return FAILURE;
                 }
-                if (nFound > 0) {
+                // Return to the initial point
+                if (nFound > 0 && returnToInitial) {
                     // Return to start
                     tour.pushBack(*(tour.begin()));
                 }
             }
         }
-        /*
-        std::cout << "Read tour file: " << std::endl
+        
+        Logger::logDebug() << "Read tour file: " << std::endl
             << "\tName: " << name << std::endl
             << "\tComment: " << comment << std::endl
             << "\tSize: " << n << std::endl;
-        */
     }
     catch (std::regex_error& e) {
-        std::cerr << "Parser syntax error: " << e.what() << std::endl;
-        return 1;
+        Logger::logError() << "Parser syntax error: " << e.what() << std::endl;
+        return FAILURE;
     }
     catch (std::exception& e) {
-        std::cerr << "Parser error: " << e.what() << std::endl;
-        print_stacktrace();
-        return 1;
+        Logger::logError() << "Parser error: " << e.what() << std::endl;
+        return FAILURE;
     }
 
     if (!foundTour) {
-        std::cerr << "Missing tour section." << std::endl;
-        return 1;
+        Logger::logError() << "Missing tour section." << std::endl;
+        return FAILURE;
     }
     if (!foundName) {
-        std::cerr << "Warning: Missing name." << std::endl;
+        Logger::logWarn() << "Missing name section." << std::endl;
     }
     if (!foundComment) {
-        std::cerr << "Warning: Missing comment." << std::endl;
+        Logger::logWarn() << "Missing comment section." << std::endl;
     }
 
-    return 0;
- }
+    return SUCCESS;
+}
+
+} // namespace dpp
 

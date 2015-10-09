@@ -1,0 +1,45 @@
+#ifndef _DPP_DUBINS_VEHICLE_PATH_PLANNER_H_
+#define _DPP_DUBINS_VEHICLE_PATH_PLANNER_H_
+
+#include <ogdf/basic/Graph.h>
+#include <ogdf/basic/GraphAttributes.h>
+
+#include <dpp/planner/PathPlanner.h>
+//#include <dpp/solver/NearestNeighborDTSP.h>
+//#include <dpp/solver/AlternatingDTSP.h>
+#include <dpp/planalg/RandomizedDTSP.h>
+
+namespace dpp {
+
+class DubinsVehiclePathPlanner : public PathPlanner {
+public:
+    DubinsVehiclePathPlanner(double turnRadius=1.0)
+        : m_turnRadius(turnRadius),
+        PathPlanner(new RandomizedDTSP)
+    { }
+
+    ~DubinsVehiclePathPlanner()
+    { }
+
+    void addWaypoints(std::string gmlFilename);
+
+    void addWaypoints(ogdf::Graph &G, ogdf::GraphAttributes &GA);
+
+    double turnRadius(void) {
+        return m_turnRadius;
+    }
+
+    void turnRadius(double r) {
+        m_turnRadius = r;
+    }
+
+    bool solve(void);
+
+private:
+    double m_turnRadius;
+
+};
+
+} // namespace dpp
+
+#endif // _DPP_DUBINS_VEHICLE_PATH_PLANNER_H_

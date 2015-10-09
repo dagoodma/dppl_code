@@ -5,19 +5,15 @@
  *
  * Derived from the Randomized Algorithm (Le Ny et al. 2005).
  *
- * Copyright (C) 2014-2015 DubinsAreaCoverage.
+ * Copyright (C) 2014-2015 DubinsPathPlanner.
  * Created by David Goodman <dagoodma@gmail.com>
  * Redistribution and use of this file is allowed according to the terms of the MIT license.
- * For details see the COPYRIGHT file distributed with DubinsAreaCoverage.
+ * For details see the LICENSE file distributed with DubinsPathPlanner.
 */
-#include <math.h>
-#include <chrono>
 #include <iostream>
 #include <fstream>
 #include <stdio.h>
 #include <stdbool.h>
-#include <stdexcept>
-#include <cassert>
 
 #include <random>
 #include <cmath>

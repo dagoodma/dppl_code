@@ -1,73 +1,58 @@
 /*
-The MIT License
-Copyright (c) 2015 UCSC Autonomous Systems Lab
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
-*/
-#include <math.h>
+ * Path-related utility functions.
+ *
+ * Copyright (C) 2014-2015 DubinsPathPlanner.
+ * Created by David Goodman <dagoodma@gmail.com>
+ * Redistribution and use of this file is allowed according to the terms of the MIT license.
+ * For details see the LICENSE file distributed with DubinsPathPlanner.
+ */
 #include <stdio.h>
+#include <math.h>
 #include <algorithm>
+
 #include <Eigen/Dense>
+
+#include <dpp/basic/Path.h>
 
 using Eigen::Vector3d;
 using Eigen::Vector2d;
 
-#include "Dubins.h"
-#include "Util.h"
-
-//#define DUBINS_DEBUG
+//#define DPP_PATH_DEBUG
 
 #define HEADING_TOLERANCE          1E-10 // upperbound for Euclidean metric, radius safe?
 
-#define MAX_EDGE_COST           999999.0
+#define MAX_EDGE_COST           999999.0 // todo: scale this based on edge costs
+
+namespace dpp {
 
 /**
  * Calculate the shortest Dubins' path distance to the node. Note that all angles
  * used in this function are heading angles from 0 at the y-axis, and
  * counter-clockwise is positive. 
  */
-double dubinsPathLength(Configuration &Cs, Configuration &Ce, double r) {
+double dubinsPathLength(VehicleConfiguration &Cs, VehicleConfiguration &Ce, double r) {
     Vector2d Ps = Vector2d(Cs.x(), Cs.y()),
         Pe = Vector2d(Ce.x(), Ce.y());
     double Xs = Cs.m_heading,
         Xe = Ce.m_heading;
     double dist = (Ps - Pe).norm();
 
-    #ifdef DUBINS_DEBUG
-    cout << "Given Cs=" << Cs << ", Ce=" << Ce << ", r=" << r << endl;
-    cout << "Got dist=" << dist << " compared to r=" << r << "." << endl;
+    #ifdef DPP_PATH_DEBUG
+    Logger::logDebug() << "Given Cs=" << Cs << ", Ce=" << Ce << ", r=" << r << std::endl;
+    Logger::logDebug() << "Got dist=" << dist << " compared to r=" << r << "." << std::endl;
     #endif
-    /*
-    printf("Given Cs=(\n    %+E,\n    %+E,\n    %+.25E)\n",
-        Cs.x(), Cs.y(), Cs.heading());
 
-    printf("Given Ce=(\n    %+E,\n    %+E,\n    %+.25E)\n",
-        Ce.x(), Ce.y(), Ce.heading());
-    */
-
-    if (dist < 3.0 * r) {
-        std::cerr << "distance must be larger than 3*r" << endl;
-        return -1.0;
-    }
+    DPP_ASSERT(dist >= 3.0 * r);
+    //if (dist < 3.0 * r) {
+    //  std::domain_error("distance must be larger than 3*r");
+    //}
 
     // Added tolerance to avoid numerical instability for paths with no curviture
-    // TODO compute curviture as percent safe for any turn radius?
+    // TODO compute curviture as ratio w.r.t. turn radius?
     if (fabs(Xs - Xe) <= HEADING_TOLERANCE) {
-        #ifdef DUBINS_DEBUG
-        printf("Using straight line L=%+E. |Xs - Xe| = %+E <= %+E\n",(Pe - Ps).norm(), fabs(Xs - Xe), HEADING_TOLERANCE);
+        #ifdef DPP_PATH_DEBUG
+        Logger::logDebug() << "Using straight line L=" << (Pe - Ps).norm() << ". |Xs - Xe| = "
+            << fabs(Xs - Xe) << " <= " << HEADING_TOLERANCE << std::endl;
         #endif
         return (Pe - Ps).norm();
     }
@@ -91,42 +76,21 @@ double dubinsPathLength(Configuration &Cs, Configuration &Ce, double r) {
     PC_re = PC_re.transpose() + r*R_re.transpose();
     PC_le = PC_le.transpose() + r*R_le.transpose();
 
-    #ifdef DUBINS_DEBUG
-    cout << "PC_rs " << PC_rs << "." << endl;
-    cout << "PC_ls " << PC_ls << "." << endl;
-    cout << "PC_re " << PC_re << "." << endl;
-    cout << "PC_le " << PC_le << "." << endl;
+    #ifdef DPP_PATH_DEBUG
+    Logger::logDebug() << "PC_rs " << PC_rs << "." << std::endl;
+    Logger::logDebug() << "PC_ls " << PC_ls << "." << std::endl;
+    Logger::logDebug() << "PC_re " << PC_re << "." << std::endl;
+    Logger::logDebug() << "PC_le " << PC_le << "." << std::endl;
     #endif
 
     // Case I, R-S-R
     double x = headingBetween(PC_rs, PC_re);
-    //printf("norm(c_rs - c_re)=%+E \nr*wrap1=%+E\n r*wrap2=%0.9f\n",(PC_rs - PC_re).norm(),
-    //    r*wrapAngle(2.0 * M_PI + wrapAngle(x - M_PI/2.0) - wrapAngle(Xs - M_PI/2.0)),
-    //    r*wrapAngle(2.0*M_PI + wrapAngle(Xe - M_PI/2.0) - wrapAngle(x - M_PI/2.0)));
-    // printf("r*wrap2: wrapAngle(Xe - M_PI/2.0)=%+E, wrapAngle(x - M_PI/2.0)=%+E\n",
-    //    wrapAngle(Xe - M_PI/2.0), wrapAngle(x - M_PI/2.0));
-    /*
-    printf("CW: Xe - X = %+E\n", wrapAngle(Xe - M_PI/2.0) - wrapAngle(x - M_PI/2.0));
-    printf("CW: X - Xe = %+E\n", wrapAngle(x - M_PI/2.0) - wrapAngle(Xe - M_PI/2.0));
-    printf("CW: Xe = %+E\n", wrapAngle(Xe - M_PI/2.0));
-    printf("CW: X = %+E\n", wrapAngle(x - M_PI/2.0));
-    printf("Norm = %+E\n",(PC_rs - PC_re).norm() );
-    */
-
     double L1 = (PC_rs - PC_re).norm() 
         + r*wrapAngle(2.0 * M_PI + wrapAngle(x - M_PI/2.0) - wrapAngle(Xs - M_PI/2.0))
         + r*wrapAngle(2.0 * M_PI + wrapAngle(Xe - M_PI/2.0) - wrapAngle(x - M_PI/2.0));
 
-/*
-    printf("L1 = %+E\n    + %+E\n    +%+E\n\n = %+E\n",
-        (PC_rs - PC_re).norm() ,
-         r*wrapAngle(2.0 * M_PI + wrapAngle(x - M_PI/2.0) - wrapAngle(Xs - M_PI/2.0)),
-         r*wrapAngle(2.0 * M_PI + wrapAngle(Xe - M_PI/2.0) - wrapAngle(x - M_PI/2.0)),
-        L1);
-        */
-
-    #ifdef DUBINS_DEBUG
-    std::cout << "L1: " << L1 << ", with x=" << x << endl;
+    #ifdef DPP_PATH_DEBUG
+    Logger::logDebug() << "L1: " << L1 << ", with x=" << x << std::endl;
     #endif
 
     // Case II, R-S-L
@@ -136,26 +100,29 @@ double dubinsPathLength(Configuration &Cs, Configuration &Ce, double r) {
     double L2 = sqrt(ls*ls - 4*r*r) + r*wrapAngle(2.0*M_PI + wrapAngle(x2)
         - wrapAngle(Xs - M_PI/2.0)) + r*wrapAngle(2.0*M_PI + wrapAngle(x2 + M_PI)
         - wrapAngle(Xe + M_PI/2.0));
-    #ifdef DUBINS_DEBUG
-    std::cout << "L2: " << L2 << " with ls=" << ls << ", x=" << x << ", x2=" << x2 << endl;
+    #ifdef DPP_PATH_DEBUG
+    Logger::logDebug() << "L2: " << L2 << " with ls=" << ls << ", x=" << x << ", x2=" << x2 << std::endl;
     #endif
 
     // Case III, L-S-R
     ls = (PC_re - PC_ls).norm();
     x = headingBetween(PC_ls, PC_re);
     double ratioOA = 2.0*r/ls;
+    // Bound the ratio from -1 to 1
     ratioOA = std::min<double> (-1.0, ratioOA);
     ratioOA = std::max<double> (1.0, ratioOA);
-    x2 = acos(ratioOA);
-    //if (2.0*r/ls > 1.0 || 2.0*r/ls < -1.0) {
+    DPP_ASSERT(2.0*r/ls <= 1.0 && 2.0*r/ls >= -1.0);
     //    std::cerr << "angle out of range in case III" << endl;
     //    return -1.0;
     //}
+    x2 = acos(ratioOA);
     double L3 = sqrt(ls*ls - 4*r*r) + r*wrapAngle(2.0*M_PI + wrapAngle(Xs + M_PI/2.0) 
         - wrapAngle(x + x2)) + r*wrapAngle(2.0*M_PI + wrapAngle(Xe - M_PI/2.0)
         - wrapAngle(x + x2 - M_PI));
-    #ifdef DUBINS_DEBUG
-    std::cout << "L3: " << L3 << " with ls=" << ls << ", x=" << x << ", x2=" << x2 << endl;
+
+    #ifdef DPP_PATH_DEBUG
+    Logger::logDebug() << "L3: " << L3 << " with ls=" << ls << ", x=" << x << ", x2="
+        << x2 << std::endl;
     #endif
 
     // Case IV, L-S-L
@@ -163,10 +130,11 @@ double dubinsPathLength(Configuration &Cs, Configuration &Ce, double r) {
     double L4 = (PC_ls - PC_le).norm() + r*wrapAngle(2.0*M_PI + wrapAngle(Xs + M_PI/2.0)
         - wrapAngle(x + M_PI/2.0)) + r*wrapAngle(2.0*M_PI + wrapAngle(x + M_PI/2.0)
         - wrapAngle(Xe + M_PI/2.0));
-    #ifdef DUBINS_DEBUG
-    std::cout << "L4: " << L4 << ", with x=" << x << endl;
 
-    std::cout << "Comparing L1=" << L1 << " L2=" << L2 << " L3=" << L3 << " L4=" << L4 << endl;
+    #ifdef DPP_PATH_DEBUG
+    Logger::logDebug() << "L4: " << L4 << ", with x=" << x << std::endl;
+    Logger::logDebug() << "Comparing L1=" << L1 << " L2=" << L2 << " L3=" << L3 << " L4="
+        << L4 << std::endl;
     #endif
 
     return std::min({L1, L2, L3, L4});
@@ -183,7 +151,10 @@ double dubinsTourCost(ogdf::Graph &G, ogdf::GraphAttributes &GA,
     ogdf::ListIterator<ogdf::node> iter;
     double cost = 0.0;
 
-    if (tour.size() < 2) return 0.0;
+    if (tour.size() < 2) {
+        Logger::logWarn() << "Zero cost for an empty tour." << std::endl;
+        return 0.0;
+    }
 
     // Add the return edge if necessary
     ogdf::List<ogdf::node> modTour(tour);
@@ -200,7 +171,7 @@ double dubinsTourCost(ogdf::Graph &G, ogdf::GraphAttributes &GA,
     for ( iter = modTour.begin(); (i < m && iter != modTour.end()); iter++ ) {
         ogdf::node u = *iter, v = *(iter.succ());
 
-        Configuration Cu(GA.x(u), GA.y(u), X(u)),
+        VehicleConfiguration Cu(GA.x(u), GA.y(u), X(u)),
                       Cv(GA.x(v), GA.y(v), X(v));
         cost += dubinsPathLength(Cu, Cv, r);
         i++;
@@ -222,10 +193,9 @@ double createDubinsTourEdges(ogdf::Graph &G, ogdf::GraphAttributes &GA,
     double total_cost = 0.0;
 
     if (tour.size() < 2) return 0.0;
-    if (G.numberOfEdges() > 0) {
-        std::cerr << "cannot have existing edges in graph" << endl;
-        return -1.0;
-    }
+    DPP_ASSERT(G.numberOfEdges() < 1);
+    //    std::range_error("Cannot have existing edges in graph");
+    //}
 
     // Add the return edge if necessary
     ogdf::List<ogdf::node> modTour(tour);
@@ -242,7 +212,7 @@ double createDubinsTourEdges(ogdf::Graph &G, ogdf::GraphAttributes &GA,
     for ( iter = modTour.begin(); (i < m && iter != modTour.end()); iter++ ) {
         ogdf::node u = *iter, v = *(iter.succ());
 
-        Configuration Cu(GA.x(u), GA.y(u), X(u)),
+        VehicleConfiguration Cu(GA.x(u), GA.y(u), X(u)),
                       Cv(GA.x(v), GA.y(v), X(v));
         double cost = dubinsPathLength(Cu, Cv, r);
 
@@ -263,25 +233,28 @@ double createDubinsTourEdges(ogdf::Graph &G, ogdf::GraphAttributes &GA,
 
 
 /**
- * Computes an adjacency matrix of Dubins path lengths between nodes for ATSP.
+ * Computes an adjacency matrix of Dubins path lengths between nodes with the
+ * given headings (for ATSP).
  */
 void buildDubinsAdjacencyMatrix(ogdf::Graph &G, ogdf::GraphAttributes &GA, 
     NodeMatrix<double> &A, ogdf::NodeArray<double> &X, double turnRadius) {
   
     ogdf::node i, j;
     forall_nodes(i, G) {
-        Configuration Ci(GA.x(i), GA.y(i), X(i));
+        VehicleConfiguration Ci(GA.x(i), GA.y(i), X(i));
 
         forall_nodes(j, G) {
             if (i == j) {
                 A[i][i] = MAX_EDGE_COST;
                 continue;
             }
-            Configuration Cj(GA.x(j), GA.y(j), X(j));
+            VehicleConfiguration Cj(GA.x(j), GA.y(j), X(j));
             
             double w = dubinsPathLength(Ci, Cj, turnRadius);
             A[i][j] = w;
         }
     }
 }
+
+} // namespace DPP
 

@@ -1,5 +1,5 @@
-#ifndef _CONFIGURATION_H_
-#define _CONFIGURATION_H_
+#ifndef _DPP_VEHICLE_CONFIGURATION_H_
+#define _DPP_VEHICLE_CONFIGURATION_H_
 
 #include <math.h>
 #include <stdexcept>      // std::out_of_range
@@ -7,12 +7,16 @@
 #include <ogdf/basic/Graph.h>
 #include <ogdf/basic/GraphAttributes.h>
 
+#include <dpp/basic/basic.h>
+
 #include <Eigen/Dense>
 
 using Eigen::Vector3d;
 using Eigen::Vector2d;
 
-class Configuration 
+namespace dpp {
+
+class VehicleConfiguration 
 {
 public:
     // Public attributes
@@ -20,28 +24,28 @@ public:
     double m_heading; // [rad[
 
     // Public methods
-    Configuration() {
+    VehicleConfiguration() {
         m_position.m_x = 0.0;
         m_position.m_y = 0.0;
         m_heading = 0.0;
     }
 
-    Configuration(double x, double y, double heading=0.0) {
+    VehicleConfiguration(double x, double y, double heading=0.0) {
         m_position.m_x = x;
         m_position.m_y = y;
         m_heading = heading;
     }
 
-    Configuration(const Configuration &C) {
+    VehicleConfiguration(const VehicleConfiguration &C) {
         m_position = C.m_position;
         m_heading = C.m_heading;
     }
 
     // Operator overloading
-    Configuration & operator=(const Configuration &C);
-    friend bool operator==(Configuration &C1, Configuration &C2);
-    friend bool operator!=(Configuration &C1, Configuration &C2);
-    friend std::ostream & operator<<(std::ostream & stream, Configuration const & v);
+    VehicleConfiguration & operator=(const VehicleConfiguration &C);
+    friend bool operator==(VehicleConfiguration &C1, VehicleConfiguration &C2);
+    friend bool operator!=(VehicleConfiguration &C1, VehicleConfiguration &C2);
+    friend std::ostream & operator<<(std::ostream & stream, VehicleConfiguration const & v);
 
     // Accessors
     double x() {
@@ -63,6 +67,7 @@ public:
     }
 
     void setHeading(double x) {
+        DPP_ASSERT(x >= 0 && x < 2.0*M_PI);
         m_heading = x;
     }
 
@@ -86,31 +91,32 @@ public:
         return Vector2d(m_position.m_x, m_position.m_y);
     }
 
-    double euclideanDistance(Configuration &C) {
+    double euclideanDistance(VehicleConfiguration &C) {
         return m_position.distance(C.m_position);
     }
 };
 
-inline Configuration & Configuration::operator=(const Configuration &C) {
+inline VehicleConfiguration & VehicleConfiguration::operator=(const VehicleConfiguration &C) {
     m_position = C.m_position;
     m_heading = C.m_heading;
 
     return *this;
 }
 
-inline bool operator==(Configuration &C1, Configuration &C2) {
+inline bool operator==(VehicleConfiguration &C1, VehicleConfiguration &C2) {
     return (C1.m_position.m_x == C2.m_position.m_x &&
             C1.m_position.m_y == C2.m_position.m_y &&
             C1.m_heading == C2.m_heading);
 }
 
-inline bool operator!=(Configuration &C1, Configuration &C2) {
+inline bool operator!=(VehicleConfiguration &C1, VehicleConfiguration &C2) {
     return !(C1 == C2);
 }
 
-inline std::ostream & operator<<(std::ostream & stream, const Configuration & v) {
+inline std::ostream & operator<<(std::ostream & stream, const VehicleConfiguration & v) {
     stream << "(" << v.m_position.m_x << ", " << v.m_position.m_y << ", " << v.m_heading << ")";
 }
 
+} // namespace dpp
 
-#endif // _CONFIGURATION_H_H
+#endif // _DPP_VEHICLE_CONFIGURATION_H_

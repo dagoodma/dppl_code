@@ -1,6 +1,5 @@
-
-#ifndef _UTIL_H
-#define _UTIL_H
+#ifndef _DPP_UTIL_H
+#define _DPP_UTIL_H
 
 #include <stdlib.h>   
 #include <stdio.h>
@@ -11,11 +10,12 @@
 
 #include <Eigen/Dense>
 
+#include <dpp/basic/basic.h>
+
 using Eigen::Vector3d;
 using Eigen::Vector2d;
 
-#define FAILURE (-1)
-#define SUCCESS (0)
+namespace dpp {
 
 /**
  * A modulo function that works properly with negatives.
@@ -80,33 +80,20 @@ inline double headingBetween(Vector2d u, Vector2d v) {
         psi = atan((y2 - y1)/(x1 - x2)) + 3.0*M_PI/2.0;
     }
     else {
-        throw std::out_of_range ("uncovered quadrant");
+        throw std::out_of_range ("uncovered quadrant"); 
     }
 
     return psi;
 }
 /**
- * Calls the 2D version of headingBetween() by ignoring the 3rd dimension.
+ * Calls the 2D version of the function with the same name by ignoring the 3rd
+ * dimension.
  */
 inline double headingBetween(Vector3d u, Vector3d v) {
     Vector2d u2(u[0], u[1]),
         v2(v[0], v[1]);
     return headingBetween(u2,v2);
 }
-
-/*
-*
- * Returns L2-Norm of a vector.
- */
-/*
-inline double l2_norm(Vector3d const& u) {
-    double accum = 0.0;
-    for (double x : u) {
-        accum += x * x;
-    }
-    return sqrt(accum);
-} 
-*/
 
 /*
  * Clears all edges in the graph.
@@ -125,20 +112,20 @@ inline void clearEdges(ogdf::Graph &G) {
 /**
  * Prints a list of all nodes and their (x,y) positions.
  */
-inline void printGraph(ogdf::Graph &G, ogdf::GraphAttributes &GA) {
-    cout << "Graph 0x" << &G << " with " << G.numberOfNodes() << " nodes and "
+inline void printGraph(ogdf::Graph &G, ogdf::GraphAttributes &GA, std::ostream &out=std::cout) {
+    out << "Graph 0x" << &G << " with " << G.numberOfNodes() << " nodes and "
          << G.numberOfEdges() << " edges:" << endl;
 
     ogdf::node u;
     forall_nodes(u,G) {
-        cout << "   Node " << GA.idNode(u) << " at (" << GA.x(u) << ", " << GA.y(u) << ")." << endl;
+        out << "   Node " << GA.idNode(u) << " at (" << GA.x(u) << ", " << GA.y(u) << ")." << endl;
     }
 
     ogdf::edge e;
     forall_edges(e,G) {
         ogdf::node u = e->source();
         ogdf::node v = e->target();
-        cout << "   Edge " << e->index() << " from node " << GA.idNode(u)
+        out << "   Edge " << e->index() << " from node " << GA.idNode(u)
             << " (" << GA.x(u) << ", " << GA.y(u) << ") to node " << GA.idNode(v)
             << " (" << GA.x(v) << ", " << GA.y(v) << ")." << std::endl;
     }
@@ -147,9 +134,9 @@ inline void printGraph(ogdf::Graph &G, ogdf::GraphAttributes &GA) {
 /**
  * Prints all edges in the graph.
  */
-inline void printEdges(ogdf::Graph &G, ogdf::GraphAttributes &GA) {
+inline void printEdges(ogdf::Graph &G, ogdf::GraphAttributes &GA, std::ostream &out=std::cout) {
     ogdf::edge e;
-    cout << "Edges: ";
+    out << "Edges: ";
     forall_edges(e, G) {
     //for ( edgeIter = edges.begin(); edgeIter != edges.end(); edgeIter++ ) {
         ogdf::node u = e->source();
@@ -157,7 +144,7 @@ inline void printEdges(ogdf::Graph &G, ogdf::GraphAttributes &GA) {
         int uid = GA.idNode(u);
         int vid = GA.idNode(v);
         double cost = GA.doubleWeight(e);
-        cout <<"   " << uid << " -> " << vid << " : " << cost << endl;
+        out <<"   " << uid << " -> " << vid << " : " << cost << endl;
     }
 }
 
@@ -165,9 +152,9 @@ inline void printEdges(ogdf::Graph &G, ogdf::GraphAttributes &GA) {
  * Prints edge list.
  */
 inline void printEdges(ogdf::Graph &G, ogdf::GraphAttributes &GA,
-    ogdf::List<ogdf::edge> &edges) {
+    ogdf::List<ogdf::edge> &edges, std::ostream &out=std::cout) {
     ogdf::ListIterator<ogdf::edge> edgeIter;
-    cout << "Edges: " << endl;
+    out << "Edges: " << endl;
     for ( edgeIter = edges.begin(); edgeIter != edges.end(); edgeIter++ ) {
         ogdf::edge e = *edgeIter;
         ogdf::node u = e->source();
@@ -175,7 +162,7 @@ inline void printEdges(ogdf::Graph &G, ogdf::GraphAttributes &GA,
         int uid = GA.idNode(u);
         int vid = GA.idNode(v);
         double cost = GA.doubleWeight(e);
-        cout <<"   " << uid << " -> " << vid << " : " << cost << endl;
+        out <<"   " << uid << " -> " << vid << " : " << cost << endl;
     }
 }
 
@@ -210,5 +197,7 @@ private:
     std::chrono::high_resolution_clock::time_point m_timestamp;
 };
 
-#endif // _UTIL_H
+} // namespace dpp
+
+#endif // _DPP_UTIL_H
  
