@@ -34,31 +34,32 @@ public:
         m_algorithm(alg) {
     }
 
-    virtual ~PathPlanner()  = 0;
+    virtual ~PathPlanner() = 0;
 
-    Graph graph(void) {
-        return m_G;
+    Graph *graphPtr(void) {
+        return &m_G;
     }
 
-    GraphAttributes graphAttributes(void) {
+    GraphAttributes &graphAttributes(void) {
         return m_GA;
     }
 
-    List<node> tour(void) {
+    List<node> &tour(void) {
         DPP_ASSERT(m_haveSolution);
         return m_Tour;
     }
 
-    List<edge> edges(void) {
+    List<edge> &edges(void) {
         DPP_ASSERT(m_haveSolution);
         return m_Edges;
     }
 
-    NodeArray<double> headings(void) {
+    NodeArray<double> &headings(void) {
+        DPP_ASSERT(m_Headings.graphOf() == const_cast<const Graph*>(&m_G));
         return m_Headings;
     }
 
-    void headings(NodeArray<double> X) {
+    void headings(NodeArray<double> &X) {
         DPP_ASSERT(X.graphOf() == const_cast<const Graph*>(&m_G));
         m_Headings = X;
     }

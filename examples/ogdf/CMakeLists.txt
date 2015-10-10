@@ -19,8 +19,8 @@ else()
 endif()
 
 ## Paths to includes and libraries
-include_directories( ~/asl/dubins_coverage_cpp/lib/ogdf/include )
-link_directories( ~/asl/dubins_coverage_cpp/lib/ogdf/_debug )
+include_directories( ~/asl/dubins_area_coverage/Code/lib/ogdf/include )
+link_directories( ~/asl/dubins_area_coverage/Code/lib/ogdf/_debug )
 
 
  #SET( CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${GCC_COVERAGE_COMPILE_FLAGS} -g" )

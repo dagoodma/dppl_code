@@ -31,7 +31,8 @@ link_directories( ${CMAKE_SOURCE_DIR}/lib/ogdf/_debug )
 include_directories( ${CMAKE_SOURCE_DIR}/lib/ogdf/include )
 include_directories( ${CMAKE_SOURCE_DIR}/lib/eigen-eigen-bdd17ee3b1b3 )
 include_directories( ${CMAKE_SOURCE_DIR}/lib/cxxopts/src )
-# DPP includes
+include_directories( ${CMAKE_SOURCE_DIR}/lib/stacktrace )
+# DPP library includes
 include_directories( ${CMAKE_SOURCE_DIR}/include )
 include_directories( ${CMAKE_SOURCE_DIR}/include/dpp )
 include_directories( ${CMAKE_SOURCE_DIR}/include/dpp/basic )

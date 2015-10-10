@@ -14,7 +14,6 @@
 namespace dpp {
 
 PathPlanner::~PathPlanner() {
-    
 }
 
 } // namespace dpp 

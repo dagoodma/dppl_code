@@ -166,6 +166,18 @@ inline void printEdges(ogdf::Graph &G, ogdf::GraphAttributes &GA,
     }
 }
 
+/**
+ * Print headings
+ */
+inline void printHeadings(ogdf::Graph &G, ogdf::GraphAttributes &GA,
+    ogdf::NodeArray<double> &Headings, std::ostream &out=std::cout) {
+    ogdf::node u;
+    out << "Headings: " << endl;
+    forall_nodes(u,G) {
+        out << "   Node " << GA.idNode(u) << ": " << Headings[u] << " rad." << std::endl;
+    }
+}
+
 
 /**
  * Performance timer class (c++11 only).

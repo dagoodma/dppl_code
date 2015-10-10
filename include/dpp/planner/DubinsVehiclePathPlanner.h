@@ -13,6 +13,8 @@ namespace dpp {
 
 class DubinsVehiclePathPlanner : public PathPlanner {
 public:
+    enum PlanningAlgorithm {NEAREST_NEIGHBOR, ALTERNATING, RANDOMIZED};
+
     DubinsVehiclePathPlanner(double turnRadius=1.0)
         : m_turnRadius(turnRadius),
         PathPlanner(new RandomizedDTSP)
@@ -33,7 +35,17 @@ public:
         m_turnRadius = r;
     }
 
+    void algorithm(PlanningAlgorithm algId);
+
+    const std::string algorithm(void) {
+        return m_algorithm->name();
+    }
+
     bool solve(void);
+
+    void copySolution(ogdf::Graph &G, ogdf::GraphAttributes &GA,
+        ogdf::List<ogdf::node> &Tour, ogdf::List<ogdf::edge> &Edges,
+        NodeArray<double> &Headings, double &cost);
 
 private:
     double m_turnRadius;

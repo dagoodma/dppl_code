@@ -67,7 +67,7 @@ void randomizeHeadings(Graph &G, GraphAttributes &GA, NodeArray<double> &Heading
         double x = randomHeading();
         Headings[i] = x;
 
-        Logger::logDebug() << "   Node " << GA.idNode(i) << ": " << x << std::endl;
+        Logger::logDebug() << "   Node " << GA.idNode(i) << ": " << x << " rad" << std::endl;
     }
 }
 
@@ -173,14 +173,6 @@ int RandomizedDTSP::run(Graph &G, GraphAttributes &GA, double x, double r,
 
     // Create edges
     cost = createDubinsTourEdges(G, GA, Tour, Headings, r, Edges, true); // TODO add return cost parameter  to main
-    
-    // Print headings
-    node u;
-    Logger::logInfo() << "Solved " << n << " point tour with cost " << cost << "." << std::endl;
-    Logger::logInfo() << "Headings: " << endl;
-    forall_nodes(u,G) {
-        Logger::logInfo() << "   Node " << GA.idNode(u) << ": " << Headings[u] << " rad." << std::endl;
-    }
 
     // Cleanup
     if (std::remove(tspFilename.c_str()) != 0 

@@ -5,6 +5,8 @@
 #include <stdbool.h>
 
 #include <dpp/basic/basic.h>
+#include <dpp/basic/Logger.h>
+
 #include <ogdf/basic/Graph.h>
 #include <ogdf/basic/GraphAttributes.h>
 #include <ogdf/basic/List.h>
@@ -64,6 +66,9 @@ public:
         : Algorithm(name, Algorithm::Type::DTSP)
     { }
 
+    ~AlgorithmDTSP() 
+    { }
+
     virtual int run(Graph &G, GraphAttributes &GA, double x, double r,
         List<node> &Tour, List<edge> &Edges, NodeArray<double> &Headings, double &cost,
         bool returnToInitial=true) = 0;
@@ -77,6 +82,11 @@ public:
     AlgorithmCPP(std::string name)
         : Algorithm(name, Algorithm::Type::CPP)
     { }
+
+    ~AlgorithmCPP() {
+        Logger::logDebug() << "Destructing " << typeid(*this).name() << " at line "
+            << __LINE__ << " in file " << __FILE__ << "." << std::endl;
+    }
 
     virtual int run(void) = 0;
 };
