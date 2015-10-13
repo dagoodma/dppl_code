@@ -45,7 +45,7 @@ Logger::~Logger() {
 void Logger::initializeLogger(std::ostream &ostream) {
     Logger *log  = Logger::Instance();
     log->m_logger.setWorldStream(ostream);
-    log->m_logger.lout() << "Log intialized." << endl;
+    log->m_logger.lout() << "Log initialized." << endl;
 }
 
 /* 
@@ -58,16 +58,14 @@ void Logger::initializeLogger(std::string logFilename) {
     initializeLogger(log->m_logFile);
 }
 
-std::ostream & Logger::logOut(Logger::Level l) {
+std::ostream & Logger::logOut(Logger::Level l, Logger::Verbosity v) {
     Logger *log = Logger::Instance();
-    // TODO add verbose mode
-#ifndef DPP_DEBUG
-    if (log->m_loglevel <= l) {
-        return log->m_logger.lout();
+    
+    if (log->m_verbosity >= v) {
+        if (log->m_level <= l) {
+            return log->m_logger.lout();
+        }
     }
-#else
-    return log->m_logger.lout();
-#endif
     return nullStream;
 }
 

@@ -18,11 +18,9 @@ namespace dpp {
  * Load graph from GML files.
  */
 void DubinsVehiclePathPlanner::addWaypoints(std::string gmlFilename) {
-    Logger::logDebug() << "Before mem=" << (&m_G);
     DPP_ASSERT(ogdf::GraphIO::readGML(m_GA, m_G, gmlFilename));
     m_Headings.init(m_G);
-    Logger::logDebug() << ", after mem=" << (&m_G) << std::endl;
-    Logger::logDebug() << "Read " << gmlFilename << " with " << waypointCount()
+    Logger::logDebug(DPP_LOGGER_VERBOSE_1) << "Read " << gmlFilename << " with " << waypointCount()
         << " nodes." << std::endl;
 }
 
@@ -33,7 +31,7 @@ void DubinsVehiclePathPlanner::addWaypoints(ogdf::Graph &G, ogdf::GraphAttribute
     m_G = G;
     m_GA = GA;
     m_Headings.init(m_G);
-    Logger::logDebug() << "Copied graph with " << waypointCount() << " nodes." << std::endl;
+    Logger::logDebug(DPP_LOGGER_VERBOSE_1) << "Copied graph with " << waypointCount() << " nodes." << std::endl;
 }
 
 /*
@@ -43,7 +41,7 @@ bool DubinsVehiclePathPlanner::solve(void) {
     DPP_ASSERT(waypointCount() > 1);
     m_haveSolution = false;
 
-    Logger::logInfo() << "Solving " << waypointCount() << " node problem with "
+    Logger::logInfo(DPP_LOGGER_VERBOSE_1) << "Solving " << waypointCount() << " node problem with "
         << m_algorithm->name() << " " << m_algorithm->typeText() << " algorithm." << std::endl;
     try {
         AlgorithmDTSP *alg = dynamic_cast<AlgorithmDTSP*>(m_algorithm.get());
@@ -80,16 +78,14 @@ void DubinsVehiclePathPlanner::copySolution(ogdf::Graph &G, ogdf::GraphAttribute
  */
 void DubinsVehiclePathPlanner::algorithm(PlanningAlgorithm algId) {
     switch (algId) {
-        /*
         case NEAREST_NEIGHBOR:
-            m_algorithm = new NearestNeighborDTSP();
+            m_algorithm.reset(new NearestNeighborDTSP());
             Logger::logDebug() << "Set DTSP algorithm to NEAREST_NEIGHBOR." << std::endl;
             break;
         case ALTERNATING:
-            m_algorithm = new AlternatingDTSP();
+            m_algorithm.reset(new AlternatingDTSP());
             Logger::logDebug() << "Set DTSP algorithm to ALTERNATING." << std::endl;
             break;
-        */
         case RANDOMIZED:
             m_algorithm.reset(new RandomizedDTSP());
             Logger::logDebug() << "Set DTSP algorithm to RANDOMIZED." << std::endl;

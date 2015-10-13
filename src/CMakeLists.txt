@@ -13,7 +13,9 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 #TARGET_LINK_LIBRARIES( alternatingDTSP OGDF COIN LKH )
 #TARGET_LINK_LIBRARIES( randomizedDTSP OGDF COIN LKH )
 
+################################
 # DPP Library
+################################
 add_library(DPP STATIC
     dpp/basic/basic.cpp
     dpp/basic/Logger.cpp
@@ -21,11 +23,17 @@ add_library(DPP STATIC
     dpp/basic/TSPIO.cpp
     dpp/planalg/Algorithm.cpp
     dpp/planalg/RandomizedDTSP.cpp
+    dpp/planalg/NearestNeighborDTSP.cpp
+    dpp/planalg/AlternatingDTSP.cpp
     dpp/planner/PathPlanner.cpp
     dpp/planner/DubinsVehiclePathPlanner.cpp
 )
 
 TARGET_LINK_LIBRARIES( DPP OGDF COIN )
+
+################################
+# Binaries
+################################
 
 # Solve DTSP binary
 ADD_EXECUTABLE( solveDTSP solveDTSP.cpp )

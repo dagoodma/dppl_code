@@ -90,6 +90,8 @@ int main(int argc, char *argv[]) {
     // Input arguments
     string inputFilename;
     double x, r;
+    int verbose = 0;
+    //bool verbose = false;
     bool noReturn = false;
     bool debug = false;
 
@@ -105,6 +107,7 @@ int main(int argc, char *argv[]) {
             ("a,algorithm", "Algorithm for DTSP (nearest,alternating,randomized =default)",
                 cxxopts::value<std::string>()->default_value("randomized"), "DTSP_ALGORITHM")
             ("r,noreturn", "Disables returning to initial configuration", cxxopts::value<bool>(noReturn))
+            ("v,verbose", "Prints increasingly verbose messages", cxxopts::value<int>(verbose))
             //("", "x is the initial heading")
             //("", "r is the turn radius of the Dubins vehicle");
             // TODO hide these:
@@ -124,16 +127,23 @@ int main(int argc, char *argv[]) {
         options.parse(argc, argv);
 
         // Read arguments
-        std::cout << "Debug=" << debug << ", noreturn=" << noReturn << std::endl;
-
         inputFilename =  options["inputGMLFile"].as<std::string>();
         x = options["initialHeading"].as<double>();
         r = options["turnRadius"].as<double>();
 
-        // Set debug mode
+        // Setup logger
+        dpp::Logger *log = dpp::Logger::Instance();
+
+        // Set debug mode if given in options
         if (debug) {
-            dpp::Logger *log = dpp::Logger::Instance();
             log->level(dpp::Logger::Level::LL_DEBUG);
+        }
+
+        // Set verbosity if given in options
+        if (verbose) {
+        //if (options.count("verbose")) {
+        //    verbosity = options["verbose"].as<bool>();
+            log->verbose(verbose);
         }
 
         // Set desired algorithm
@@ -187,8 +197,8 @@ int main(int argc, char *argv[]) {
     // Print headings and edge list
     ogdf::node u;
     std::cout << "Solved " << G->numberOfNodes() << " point tour with cost " << cost << "." << std::endl;
-    dpp::printHeadings(*G, GA, Headings);
-    dpp::printEdges(*G, GA, E);
+    std::cout << dpp::printHeadings(*G, GA, Headings);
+    std::cout << dpp::printEdges(*G, GA, E);
 
     return SUCCESS;
 }

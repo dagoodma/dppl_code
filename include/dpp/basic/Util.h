@@ -57,6 +57,7 @@ inline double radToDeg(double x) {
 /**
  * Find the 2D heading angle between the vectors. Heading angle is in radians, and
  * increases clockwise where 0 is the positive y-axis.
+ * @note Could have used atan2(y,x)
  */
 inline double headingBetween(Vector2d u, Vector2d v) {
     double x1 = u[0];
@@ -112,63 +113,65 @@ inline void clearEdges(ogdf::Graph &G) {
 /**
  * Prints a list of all nodes and their (x,y) positions.
  */
-inline void printGraph(ogdf::Graph &G, ogdf::GraphAttributes &GA, std::ostream &out=std::cout) {
-    out << "Graph 0x" << &G << " with " << G.numberOfNodes() << " nodes and "
+
+inline std::string printGraph(ogdf::Graph &G, ogdf::GraphAttributes &GA) {
+    std::stringstream sout;
+
+    sout << "Graph 0x" << &G << " with " << G.numberOfNodes() << " nodes and "
          << G.numberOfEdges() << " edges:" << endl;
 
     ogdf::node u;
     forall_nodes(u,G) {
-        out << "   Node " << GA.idNode(u) << " at (" << GA.x(u) << ", " << GA.y(u) << ")." << endl;
+        sout << "   Node " << GA.idNode(u) << " at (" << GA.x(u) << ", " << GA.y(u) << ")." << endl;
     }
 
     ogdf::edge e;
     forall_edges(e,G) {
         ogdf::node u = e->source();
         ogdf::node v = e->target();
-        out << "   Edge " << e->index() << " from node " << GA.idNode(u)
+        sout << "   Edge " << e->index() << " from node " << GA.idNode(u)
             << " (" << GA.x(u) << ", " << GA.y(u) << ") to node " << GA.idNode(v)
             << " (" << GA.x(v) << ", " << GA.y(v) << ")." << std::endl;
     }
+    return sout.str();
 }
 
-/**
- * Prints all edges in the graph.
- */
-inline void printEdges(ogdf::Graph &G, ogdf::GraphAttributes &GA, std::ostream &out=std::cout) {
-    ogdf::edge e;
-    out << "Edges: ";
-    forall_edges(e, G) {
-    //for ( edgeIter = edges.begin(); edgeIter != edges.end(); edgeIter++ ) {
+inline std::string printEdges(ogdf::Graph &G, ogdf::GraphAttributes &GA,
+    ogdf::List<ogdf::edge> &Edges) {
+    std::stringstream sout;
+    ogdf::ListIterator<ogdf::edge> iter;
+    sout << "Edges: " << std::endl;
+    for ( iter = Edges.begin(); iter != Edges.end(); iter++ ) {
+        ogdf::edge e = *iter;
         ogdf::node u = e->source();
         ogdf::node v = e->target();
         int uid = GA.idNode(u);
         int vid = GA.idNode(v);
         double cost = GA.doubleWeight(e);
-        out <<"   " << uid << " -> " << vid << " : " << cost << endl;
+        sout << "   " << uid << " -> " << vid << " : " << cost << std::endl;
     }
+    return sout.str();
 }
 
-/**
- * Prints edge list.
- */
-inline void printEdges(ogdf::Graph &G, ogdf::GraphAttributes &GA,
-    ogdf::List<ogdf::edge> &edges, std::ostream &out=std::cout) {
-    ogdf::ListIterator<ogdf::edge> edgeIter;
-    out << "Edges: " << endl;
-    for ( edgeIter = edges.begin(); edgeIter != edges.end(); edgeIter++ ) {
-        ogdf::edge e = *edgeIter;
-        ogdf::node u = e->source();
-        ogdf::node v = e->target();
-        int uid = GA.idNode(u);
-        int vid = GA.idNode(v);
-        double cost = GA.doubleWeight(e);
-        out <<"   " << uid << " -> " << vid << " : " << cost << endl;
+inline std::string printTour(ogdf::Graph &G, ogdf::GraphAttributes &GA,
+    ogdf::List<ogdf::node> &Tour) {
+    std::stringstream sout;
+    ogdf::ListIterator<ogdf::node> iter;
+    sout << "Tour: " << std::endl;
+    for ( iter = Tour.begin(); iter != Tour.end(); iter++ ) {
+        ogdf::node u = *iter;
+        int id = GA.idNode(u);
+        double x = GA.x(u);
+        double y = GA.y(u);
+        sout << "   " << id << " (" << x << ", " << y << ")" << std::endl;
     }
+    return sout.str();
 }
 
 /**
  * Print headings
  */
+ /*
 inline void printHeadings(ogdf::Graph &G, ogdf::GraphAttributes &GA,
     ogdf::NodeArray<double> &Headings, std::ostream &out=std::cout) {
     ogdf::node u;
@@ -176,6 +179,22 @@ inline void printHeadings(ogdf::Graph &G, ogdf::GraphAttributes &GA,
     forall_nodes(u,G) {
         out << "   Node " << GA.idNode(u) << ": " << Headings[u] << " rad." << std::endl;
     }
+}
+*/
+
+/**
+ * Print headings
+ */
+inline std::string printHeadings(ogdf::Graph &G, ogdf::GraphAttributes &GA,
+    ogdf::NodeArray<double> &Headings) {
+    std::stringstream sout;
+    ogdf::node u;
+    sout << "Headings: " << std::endl;
+    forall_nodes(u,G) {
+        sout << "   Node " << GA.idNode(u) << ": " << Headings[u] << " rad." << std::endl;
+    }
+
+    return sout.str();
 }
 
 

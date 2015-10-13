@@ -212,7 +212,7 @@ int writePARFile(std::string filename, std::string tspFilename, std::string outp
             }
         }
         
-        Logger::logDebug() << "Read tour file: " << std::endl
+        Logger::logDebug(DPP_LOGGER_VERBOSE_2) << "Read tour file: " << std::endl
             << "\tName: " << name << std::endl
             << "\tComment: " << comment << std::endl
             << "\tSize: " << n << std::endl;

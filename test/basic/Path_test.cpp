@@ -1,22 +1,20 @@
 /*
- * Copyright (C) 2014-2015 DubinsAreaCoverage.
+ * Copyright (C) 2014-2015 DubinsPathPlanner.
  * Created by David Goodman <dagoodma@gmail.com>
  * Redistribution and use of this file is allowed according to the terms of the MIT license.
- * For details see the COPYRIGHT file distributed with DubinsAreaCoverage.
+ * For details see the LICENSE file distributed with DubinsPathPlanner.
 */
 #include <iostream>
 #include <vector>
 
-#include "gtest/gtest.h"
-#include "DubinsCurves.h"
+#include <gtest/gtest.h>
+#include <DubinsCurves.h>
 
-#include "Configuration.h"
-#include "Dubins.h"
-#include "Util.h"
+#include <dpp/basic/Logger.h>
+#include <dpp/basic/VehicleConfiguration.h>
+#include <dpp/basic/Path.h>
+#include <dpp/basic/Util.h>
 
-using namespace DubinsCurves;
-
-// Have to import specifially, since Configuration clashes
 using ogdf::node;
 using ogdf::edge;
 using ogdf::Graph;
@@ -29,91 +27,93 @@ using ogdf::NodeArray;
 
 using std::vector;
 
+using dpp::VehicleConfiguration;
+
 #define TURN_RADIUS     1.0
 #define EPSILON_ERROR   0.05 // error margin in length calculation
 
 // Test for dubinsPathLength()
-TEST(DubinsPathLengthTest, MinDistance) {
-    Configuration c1(0.0,0.0,0.0), c2(0.0,0.0,0.0);
-    EXPECT_EQ(-1, dubinsPathLength(c1, c2, TURN_RADIUS));
+TEST(DubinsPathLengthTest, FailsBelowMinDistance) {
+    VehicleConfiguration c1(0.0,0.0,0.0), c2(0.0,0.0,0.0);
+    EXPECT_DEATH(dpp::dubinsPathLength(c1, c2, TURN_RADIUS), "Assertion failed: \\(dist >= 3\\.0 \\* r\\)");
 }
 
 // Test against DubinsCurves lib
 TEST(DubinsPathLengthTest, RSR) {
-    Configuration c1(0.0,0.0,0.0),
-        c2(5.0*TURN_RADIUS,0, degToRad(180.0));
+    VehicleConfiguration c1(0.0,0.0,0.0),
+        c2(5.0*TURN_RADIUS,0, dpp::degToRad(180.0));
 
     double *q0, *q1;
     c1.asArray(&q0);
     c2.asArray(&q1);
-    q0[2] = headingToAngle(q0[2]);
-    q1[2] = headingToAngle(q1[2]);
-    DubinsPath path;
-    dubins_init( q0, q1, TURN_RADIUS, &path);
-    double expectedLength = dubins_path_length(&path);
+    q0[2] = dpp::headingToAngle(q0[2]);
+    q1[2] = dpp::headingToAngle(q1[2]);
+    DubinsCurves::DubinsPath path;
+    DubinsCurves::dubins_init( q0, q1, TURN_RADIUS, &path);
+    double expectedLength = DubinsCurves::dubins_path_length(&path);
 
-    EXPECT_DOUBLE_EQ(expectedLength, dubinsPathLength(c1, c2, TURN_RADIUS));
+    EXPECT_DOUBLE_EQ(expectedLength, dpp::dubinsPathLength(c1, c2, TURN_RADIUS));
 }
 
 TEST(DubinsPathLengthTest, RSL) {
-    Configuration c1(0.0,0.0,degToRad(37)),
-        c2(5.1*TURN_RADIUS,-1.3*TURN_RADIUS, degToRad(340.0));
+    VehicleConfiguration c1(0.0,0.0,dpp::degToRad(37)),
+        c2(5.1*TURN_RADIUS,-1.3*TURN_RADIUS, dpp::degToRad(340.0));
 
     double *q0, *q1;
     c1.asArray(&q0);
     c2.asArray(&q1);
-    q0[2] = headingToAngle(q0[2]);
-    q1[2] = headingToAngle(q1[2]);
-    DubinsPath path;
-    dubins_init( q0, q1, TURN_RADIUS, &path);
-    double expectedLength = dubins_path_length(&path);
+    q0[2] = dpp::headingToAngle(q0[2]);
+    q1[2] = dpp::headingToAngle(q1[2]);
+    DubinsCurves::DubinsPath path;
+    DubinsCurves::dubins_init( q0, q1, TURN_RADIUS, &path);
+    double expectedLength = DubinsCurves::dubins_path_length(&path);
 
-    EXPECT_DOUBLE_EQ(expectedLength, dubinsPathLength(c1, c2, TURN_RADIUS));
+    EXPECT_DOUBLE_EQ(expectedLength, dpp::dubinsPathLength(c1, c2, TURN_RADIUS));
 }
 
 TEST(DubinsPathLengthTest, LSR) {
-    Configuration c1(0.0,0.0,degToRad(245)),
-        c2(5.1*TURN_RADIUS,-1.3*TURN_RADIUS, degToRad(165.0));
+    VehicleConfiguration c1(0.0,0.0,dpp::degToRad(245)),
+        c2(5.1*TURN_RADIUS,-1.3*TURN_RADIUS, dpp::degToRad(165.0));
 
     double *q0, *q1;
     c1.asArray(&q0);
     c2.asArray(&q1);
-    q0[2] = headingToAngle(q0[2]);
-    q1[2] = headingToAngle(q1[2]);
-    DubinsPath path;
-    dubins_init( q0, q1, TURN_RADIUS, &path);
-    double expectedLength = dubins_path_length(&path);
+    q0[2] = dpp::headingToAngle(q0[2]);
+    q1[2] = dpp::headingToAngle(q1[2]);
+    DubinsCurves::DubinsPath path;
+    DubinsCurves::dubins_init( q0, q1, TURN_RADIUS, &path);
+    double expectedLength = DubinsCurves::dubins_path_length(&path);
 
-    EXPECT_DOUBLE_EQ(expectedLength, dubinsPathLength(c1, c2, TURN_RADIUS));
+    EXPECT_DOUBLE_EQ(expectedLength, dpp::dubinsPathLength(c1, c2, TURN_RADIUS));
 }
 
 TEST(DubinsPathLengthTest, LSL) {
-    Configuration c1(0.0,0.0,degToRad(170)),
-        c2(5.1*TURN_RADIUS,-1.3*TURN_RADIUS, degToRad(315.0));
+    VehicleConfiguration c1(0.0,0.0, dpp::degToRad(170)),
+        c2(5.1*TURN_RADIUS,-1.3*TURN_RADIUS, dpp::degToRad(315.0));
 
     double *q0, *q1;
     c1.asArray(&q0);
     c2.asArray(&q1);
-    q0[2] = headingToAngle(q0[2]);
-    q1[2] = headingToAngle(q1[2]);
-    DubinsPath path;
-    dubins_init( q0, q1, TURN_RADIUS, &path);
-    double expectedLength = dubins_path_length(&path);
+    q0[2] = dpp::headingToAngle(q0[2]);
+    q1[2] = dpp::headingToAngle(q1[2]);
+    DubinsCurves::DubinsPath path;
+    DubinsCurves::dubins_init( q0, q1, TURN_RADIUS, &path);
+    double expectedLength = DubinsCurves::dubins_path_length(&path);
 
-    EXPECT_DOUBLE_EQ(expectedLength, dubinsPathLength(c1, c2, TURN_RADIUS));
+    EXPECT_DOUBLE_EQ(expectedLength, dpp::dubinsPathLength(c1, c2, TURN_RADIUS));
 }
 
 TEST(DubinsPathLengthTest, SimilarHeadings) {
     Vector2d u(450.0, 0.0),
         v(350.0, -100.0);
-    double X = headingBetween(u,v);
-    Configuration c1(450.0, 0.0, X),
+    double X = dpp::headingBetween(u,v);
+    VehicleConfiguration c1(450.0, 0.0, X),
         c2(350.0, -100.0, X);
             // 5pi/4 = 3.9269908169872413949974543 ~ 5.0*M_PI/4.0
 
     double expectedLength = 141.4213562373095;
 
-    EXPECT_DOUBLE_EQ(expectedLength, dubinsPathLength(c1,c2,TURN_RADIUS));
+    EXPECT_DOUBLE_EQ(expectedLength, dpp::dubinsPathLength(c1,c2,TURN_RADIUS));
 }
 
 // Value-parameterized tests for dubinsTourCost()
@@ -124,10 +124,10 @@ using ::testing::Values;
 using ::testing::ValuesIn;
 
 // Some node configurations to use
-const List<Configuration> nodeConfigs { 
+const List<VehicleConfiguration> nodeConfigs { 
     {0.0, 0.0, 0.0}, 
-    {5.1*TURN_RADIUS, 0.0, degToRad(180)}, 
-    {5.1*TURN_RADIUS, -3.3*TURN_RADIUS, degToRad(270)}
+    {5.1*TURN_RADIUS, 0.0, dpp::degToRad(180)}, 
+    {5.1*TURN_RADIUS, -3.3*TURN_RADIUS, dpp::degToRad(270)}
 }; 
 
 class DubinsTourTest : public Test {
@@ -147,7 +147,7 @@ public:
 
     virtual ~DubinsTourTest() { }
 
-    //void InitializeScenario(List<Configuration> configs) {
+    //void InitializeScenario(List<VehicleConfiguration> configs) {
     virtual void SetUp() {
         m_n = nodeConfigs.size();
         int i = 1; // node index
@@ -155,10 +155,10 @@ public:
         m_nodeList.resize(m_n);
 
         // Build graph
-        ListConstIterator<Configuration> iter;
+        ListConstIterator<VehicleConfiguration> iter;
         
         for ( iter = nodeConfigs.begin(); iter != nodeConfigs.end(); iter++ ) {
-            Configuration Cu = *iter;
+            VehicleConfiguration Cu = *iter;
             node u = m_G.newNode();
             m_GA.x(u) = Cu.x();
             m_GA.y(u) = Cu.y();
@@ -207,8 +207,10 @@ TEST_F(DubinsTourTest, EmptyTourHasZeroCost) {
 
     // Check that empty tours have zero cost regardless of whether returnCost is set or not
     List<node> tour;
-    EXPECT_EQ(0.0, dubinsTourCost(m_G, m_GA, tour, m_nodeHeadings, TURN_RADIUS, false));
-    EXPECT_EQ(0.0, dubinsTourCost(m_G, m_GA, tour, m_nodeHeadings, TURN_RADIUS, true));
+    double expectedTourCost = 0.0;
+
+    EXPECT_EQ(expectedTourCost, dpp::dubinsTourCost(m_G, m_GA, tour, m_nodeHeadings, TURN_RADIUS, false));
+    EXPECT_EQ(expectedTourCost, dpp::dubinsTourCost(m_G, m_GA, tour, m_nodeHeadings, TURN_RADIUS, true));
 }
 
 TEST_F(DubinsTourTest, ShortTourHasZeroCost) {
@@ -217,23 +219,25 @@ TEST_F(DubinsTourTest, ShortTourHasZeroCost) {
 
     // Check that single node tours have zero cost ---------------"-------------
     tour.pushBack(GetNode(1));
-    EXPECT_EQ(0.0, dubinsTourCost(m_G, m_GA, tour, m_nodeHeadings, TURN_RADIUS, false));
-    EXPECT_EQ(0.0, dubinsTourCost(m_G, m_GA, tour, m_nodeHeadings, TURN_RADIUS, true));
+    double expectedTourCost = 0.0;
+
+    EXPECT_EQ(expectedTourCost, dpp::dubinsTourCost(m_G, m_GA, tour, m_nodeHeadings, TURN_RADIUS, false));
+    EXPECT_EQ(expectedTourCost, dpp::dubinsTourCost(m_G, m_GA, tour, m_nodeHeadings, TURN_RADIUS, true));
 }
 
 TEST_F(DubinsTourTest, TourIgnoresReturn) {
     List<node> tour;
     tour.pushBack(GetNode(1));
     tour.pushBack(GetNode(2));
-    double expected_cost = 6.241592653589793;
+    double expectedTourCost = 6.241592653589793;
 
     // Two-node tour works. no returns
-    EXPECT_DOUBLE_EQ(expected_cost, dubinsTourCost(m_G, m_GA, tour,
+    EXPECT_DOUBLE_EQ(expectedTourCost, dpp::dubinsTourCost(m_G, m_GA, tour,
         m_nodeHeadings, TURN_RADIUS, false));
     
     // Same cost, because function ignores returning to node 1
     tour.pushBack(GetNode(1));
-    EXPECT_DOUBLE_EQ(expected_cost, dubinsTourCost(m_G, m_GA, tour,
+    EXPECT_DOUBLE_EQ(expectedTourCost, dpp::dubinsTourCost(m_G, m_GA, tour,
         m_nodeHeadings, TURN_RADIUS, false));
 }
 
@@ -241,14 +245,15 @@ TEST_F(DubinsTourTest, TourFollowsReturn) {
     List<node> tour;
     tour.pushBack(GetNode(1));
     tour.pushBack(GetNode(2));
+    double expectedTourCost = 12.483185307179586;
 
     // Two-node tour returns
-    EXPECT_DOUBLE_EQ(12.483185307179586, dubinsTourCost(m_G, m_GA, tour,
+    EXPECT_DOUBLE_EQ(expectedTourCost, dpp::dubinsTourCost(m_G, m_GA, tour,
         m_nodeHeadings, TURN_RADIUS, true));
 
     // Same cost, because function will not add return node 1 to the end
     tour.pushBack(GetNode(1));
-    EXPECT_DOUBLE_EQ(12.483185307179586, dubinsTourCost(m_G, m_GA, tour,
+    EXPECT_DOUBLE_EQ(expectedTourCost, dpp::dubinsTourCost(m_G, m_GA, tour,
         m_nodeHeadings, TURN_RADIUS, true));
 }
 
@@ -256,16 +261,18 @@ TEST_F(DubinsTourTest, TourFollowsReturn) {
 TEST_F(DubinsTourTest, TourWithThreeNodes) {
     //InitializeScenario(nodeConfigs);
     ASSERT_EQ(3, GetSize());
+    double expectedTourCost = 10.351530620781304;
+    double expectedReturnTourCost = 16.623390656993465;
 
     List<node> tour;
     tour.pushBack(GetNode(1));
     tour.pushBack(GetNode(2));
     tour.pushBack(GetNode(3));
 
-    EXPECT_DOUBLE_EQ(10.351530620781304, dubinsTourCost(m_G, m_GA, tour,
+    EXPECT_DOUBLE_EQ(expectedTourCost, dpp::dubinsTourCost(m_G, m_GA, tour,
         m_nodeHeadings, TURN_RADIUS, false));
 
-    EXPECT_DOUBLE_EQ(16.623390656993465, dubinsTourCost(m_G, m_GA, tour,
+    EXPECT_DOUBLE_EQ(expectedReturnTourCost, dpp::dubinsTourCost(m_G, m_GA, tour,
         m_nodeHeadings, TURN_RADIUS, true));
 
 }
@@ -284,26 +291,27 @@ TEST_F(DubinsTourEdgesTest, FailsWithExistingEdges) {
     edge e = m_G.newEdge(GetNode(1), GetNode(2));
     EXPECT_EQ(1, m_G.numberOfEdges());
 
-    EXPECT_EQ(-1, createDubinsTourEdges(m_G, m_GA, tour, m_nodeHeadings, TURN_RADIUS,
-        edges, false));
-    EXPECT_EQ(-1, createDubinsTourEdges(m_G, m_GA, tour, m_nodeHeadings, TURN_RADIUS,
-        edges, true));
+    EXPECT_DEATH(dpp::createDubinsTourEdges(m_G, m_GA, tour, m_nodeHeadings, TURN_RADIUS,
+        edges, false), "Assertion failed: \\(G\\.numberOfEdges\\(\\) < 1\\)");
+    EXPECT_DEATH(dpp::createDubinsTourEdges(m_G, m_GA, tour, m_nodeHeadings, TURN_RADIUS,
+        edges, true), "Assertion failed: \\(G\\.numberOfEdges\\(\\) < 1\\)");
 } // FailsWithExistingEdges
 
 TEST_F(DubinsTourEdgesTest, EmptyTourHasNoEdges) {
     //InitializeScenario(noConfigs);
     List<node> tour;
     List<edge> edges;
+    double expectedTourCost = 0.0;
 
     // No cost, no edges
-    EXPECT_EQ(0.0, createDubinsTourEdges(m_G, m_GA, tour, m_nodeHeadings, TURN_RADIUS,
+    EXPECT_EQ(expectedTourCost, dpp::createDubinsTourEdges(m_G, m_GA, tour, m_nodeHeadings, TURN_RADIUS,
         edges, true));
     EXPECT_EQ(0, m_G.numberOfEdges());
     EXPECT_EQ(0, edges.size());
 
     // Same with return edge option set
-    clearEdges(m_G);
-    EXPECT_EQ(0.0, createDubinsTourEdges(m_G, m_GA, tour, m_nodeHeadings, TURN_RADIUS,
+    dpp::clearEdges(m_G);
+    EXPECT_EQ(expectedTourCost, dpp::createDubinsTourEdges(m_G, m_GA, tour, m_nodeHeadings, TURN_RADIUS,
         edges, true));
     EXPECT_EQ(0, m_G.numberOfEdges());
     EXPECT_EQ(0, edges.size());
@@ -317,14 +325,14 @@ TEST_F(DubinsTourEdgesTest, ShortTourHasNoEdges) {
     tour.pushBack(GetNode(1));
 
     // No cost, no edges
-    EXPECT_EQ(0.0, createDubinsTourEdges(m_G, m_GA, tour, m_nodeHeadings, TURN_RADIUS,
+    EXPECT_EQ(0.0, dpp::createDubinsTourEdges(m_G, m_GA, tour, m_nodeHeadings, TURN_RADIUS,
         edges, true));
     EXPECT_EQ(0, m_G.numberOfEdges());
     EXPECT_EQ(0, edges.size());
 
     // Same with return edge option set
-    clearEdges(m_G);
-    EXPECT_EQ(0.0, createDubinsTourEdges(m_G, m_GA, tour, m_nodeHeadings, TURN_RADIUS,
+    dpp::clearEdges(m_G);
+    EXPECT_EQ(0.0, dpp::createDubinsTourEdges(m_G, m_GA, tour, m_nodeHeadings, TURN_RADIUS,
         edges, true));
     EXPECT_EQ(0, m_G.numberOfEdges());
     EXPECT_EQ(0, edges.size());
@@ -338,7 +346,7 @@ TEST_F(DubinsTourEdgesTest, NoReturnEdge) {
 
     // Cost matches, and we have 1 edge
     double expected_cost = 6.241592653589793;
-    EXPECT_DOUBLE_EQ(expected_cost, createDubinsTourEdges(m_G, m_GA, tour,
+    EXPECT_DOUBLE_EQ(expected_cost, dpp::createDubinsTourEdges(m_G, m_GA, tour,
         m_nodeHeadings, TURN_RADIUS, edges, false));
     EXPECT_EQ(1, m_G.numberOfEdges());
     EXPECT_EQ(1, edges.size());
@@ -348,10 +356,10 @@ TEST_F(DubinsTourEdgesTest, NoReturnEdge) {
     EXPECT_EQ(expected_cost, m_GA.doubleWeight(e));
     
     // Same with no return edge (ignore extra node in tour)
-    clearEdges(m_G);
+    dpp::clearEdges(m_G);
     edges.clear();
     tour.pushBack(GetNode(1));
-    EXPECT_DOUBLE_EQ(expected_cost, createDubinsTourEdges(m_G, m_GA, tour,
+    EXPECT_DOUBLE_EQ(expected_cost, dpp::createDubinsTourEdges(m_G, m_GA, tour,
         m_nodeHeadings, TURN_RADIUS, edges, false));
     EXPECT_EQ(1, m_G.numberOfEdges());
     EXPECT_EQ(1, edges.size());
@@ -369,7 +377,7 @@ TEST_F(DubinsTourEdgesTest, ReturnEdge) {
 
     // Cost matches, and we have 1 edge
     double expected_cost = 12.483185307179586;
-    EXPECT_DOUBLE_EQ(expected_cost, createDubinsTourEdges(m_G, m_GA, tour,
+    EXPECT_DOUBLE_EQ(expected_cost, dpp::createDubinsTourEdges(m_G, m_GA, tour,
         m_nodeHeadings, TURN_RADIUS, edges, true));
     EXPECT_EQ(2, m_G.numberOfEdges());
     EXPECT_EQ(2, edges.size());
@@ -383,10 +391,10 @@ TEST_F(DubinsTourEdgesTest, ReturnEdge) {
     EXPECT_EQ(6.241592653589793, m_GA.doubleWeight(e2));
     
     // Same with no return edge (ignore extra node in tour)
-    clearEdges(m_G);
+    dpp::clearEdges(m_G);
     edges.clear();
     tour.pushBack(GetNode(1));
-    EXPECT_DOUBLE_EQ(expected_cost, createDubinsTourEdges(m_G, m_GA, tour,
+    EXPECT_DOUBLE_EQ(expected_cost, dpp::createDubinsTourEdges(m_G, m_GA, tour,
         m_nodeHeadings, TURN_RADIUS, edges, true));
     EXPECT_EQ(2, m_G.numberOfEdges());
     EXPECT_EQ(2, edges.size());
@@ -404,17 +412,27 @@ TEST_F(DubinsTourEdgesTest, TourWithThreeNodes) {
     //InitializeScenario(nodeConfigs);
     ASSERT_EQ(3, GetSize());
 
+/*
+    dpp::Logger *log = dpp::Logger::Instance();
+    log->verbose(DPP_LOGGER_VERBOSE_2);
+    log->level(dpp::Logger::Level::LL_DEBUG);
+    */
+
     List<node> tour;
+    List<edge> edges;
     tour.pushBack(GetNode(1));
     tour.pushBack(GetNode(2));
     tour.pushBack(GetNode(3));
+    double expectedTourCost = 10.351530620781304;
+    double expectedReturnTourCost = 16.623390656993465;
 
-    EXPECT_DOUBLE_EQ(10.351530620781304, dubinsTourCost(m_G, m_GA, tour,
-        m_nodeHeadings, TURN_RADIUS, false));
+    EXPECT_DOUBLE_EQ(expectedTourCost, dpp::createDubinsTourEdges(m_G, m_GA, tour,
+        m_nodeHeadings, TURN_RADIUS, edges, false));
 
-    EXPECT_DOUBLE_EQ(16.623390656993465, dubinsTourCost(m_G, m_GA, tour,
-        m_nodeHeadings, TURN_RADIUS, true));
-
+    dpp::clearEdges(m_G);
+    edges.clear();
+    EXPECT_DOUBLE_EQ(expectedReturnTourCost, dpp::createDubinsTourEdges(m_G, m_GA, tour,
+        m_nodeHeadings, TURN_RADIUS, edges, true));
 }
 
 

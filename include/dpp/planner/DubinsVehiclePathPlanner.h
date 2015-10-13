@@ -5,8 +5,8 @@
 #include <ogdf/basic/GraphAttributes.h>
 
 #include <dpp/planner/PathPlanner.h>
-//#include <dpp/solver/NearestNeighborDTSP.h>
-//#include <dpp/solver/AlternatingDTSP.h>
+#include <dpp/planalg/NearestNeighborDTSP.h>
+#include <dpp/planalg/AlternatingDTSP.h>
 #include <dpp/planalg/RandomizedDTSP.h>
 
 namespace dpp {

@@ -22,16 +22,11 @@
 #include <dpp/planalg/RandomizedDTSP.h>
 #include <dpp/basic/TSPIO.h>
 
-#define TWO_PI    ((double)2.0 * M_PI)
-
 #define ALGORITHM_ITERATIONS            10 // number of iterations for best-of
 
-namespace dpp {
+#define TWO_PI    ((double)2.0 * M_PI)
 
-/*using dpp::TSPIO::writePARFile;
-using dpp::TSPIO::writeATSPFile;
-using dpp::TSPIO::readTSPTourFile;
-*/
+namespace dpp {
 
 /**
  * Generates a random heading in radians from [0, 2PI) with the uniform distribution.
@@ -60,14 +55,15 @@ double randomHeading(void) {
 void randomizeHeadings(Graph &G, GraphAttributes &GA, NodeArray<double> &Headings,
     bool skipOrigin=true) {
     ListIterator<node> iter;
-    Logger::logDebug() << "Randomizing headings: " << std::endl;
+    Logger::logDebug(DPP_LOGGER_VERBOSE_2) << "Randomizing headings: " << std::endl;
     node i;
     forall_nodes(i, G) {
         if (skipOrigin && i == G.firstNode()) continue; // skip the origin
         double x = randomHeading();
         Headings[i] = x;
 
-        Logger::logDebug() << "   Node " << GA.idNode(i) << ": " << x << " rad" << std::endl;
+        Logger::logDebug(DPP_LOGGER_VERBOSE_2) << "   Node " << GA.idNode(i) << ": "
+            << x << " rad" << std::endl;
     }
 }
 
@@ -78,7 +74,7 @@ void randomizeHeadings(Graph &G, GraphAttributes &GA, NodeArray<double> &Heading
  * @param GA        attributes of graph
  * @param x         a starting heading in radians [0,2*pi)
  * @param r         a turning radius in radians
- * @param tour      a list of nodes to hold the result
+ * @param Tour      a list of nodes to hold the result
  * @param Edges     a list of edges to hold the result
  * @param Headings  a node array of headings to hold the result
  * @param cost      holds the total cost result
@@ -103,8 +99,7 @@ int RandomizedDTSP::run(Graph &G, GraphAttributes &GA, double x, double r,
     int m = G.numberOfEdges();
     int n = G.numberOfNodes();
 
-    Logger::logDebug() << "Found " << n << " nodes, and " << m << " edges." << std::endl;
-
+    Logger::logDebug(DPP_LOGGER_VERBOSE_2) << "Found " << n << " nodes, and " << m << " edges." << std::endl;
 
     // Generate temporary TSP and PAR files
     Headings(G.firstNode()) = x;
@@ -120,6 +115,7 @@ int RandomizedDTSP::run(Graph &G, GraphAttributes &GA, double x, double r,
     List<node> BestTour;
     NodeArray<double> BestHeadings;
     double bestCost = -1;
+    Timer *tTotal = new Timer();
     for (int i = 0; i < ALGORITHM_ITERATIONS; i++) {
         // Generate weighted adjacency matrix from random headings
         randomizeHeadings(G, GA, Headings);
@@ -132,8 +128,10 @@ int RandomizedDTSP::run(Graph &G, GraphAttributes &GA, double x, double r,
             throw std::runtime_error("Failed creating TSP files.");
         }
 
-        Logger::logDebug() << "Wrote " << parFilename << " and " << tspFilename << "." << std::endl;
-        Logger::logDebug() << "Running LKH solver for Asymmetric TSP." << std::endl;
+        Logger::logDebug(DPP_LOGGER_VERBOSE_2) << "Wrote " << parFilename << " and "
+            << tspFilename << "." << std::endl;
+        Logger::logDebug(DPP_LOGGER_VERBOSE_2) << "Running LKH solver for Asymmetric TSP."
+            << std::endl;
 
         // Find ATSP solution with LKH. Saves into tourFilename
         Timer *t1 = new Timer();
@@ -146,7 +144,7 @@ int RandomizedDTSP::run(Graph &G, GraphAttributes &GA, double x, double r,
         //}
         float elapsedTime = t1->diffMs();
 
-        Logger::logDebug() << "Finished (" <<  elapsedTime << "ms)."
+        Logger::logDebug(DPP_LOGGER_VERBOSE_1) << "Finished (" <<  elapsedTime << "ms)."
             << " ATSP tour " << i << " in " << tourFilename << "." << std::endl;
 
         // Read LKH solution from tour file
@@ -154,7 +152,7 @@ int RandomizedDTSP::run(Graph &G, GraphAttributes &GA, double x, double r,
             std::runtime_error("Could not read solution from LKH tour file!");
         }
 
-        double cost_i = dubinsTourCost(G, GA, Tour, Headings, r, true);
+        double cost_i = dubinsTourCost(G, GA, Tour, Headings, r, returnToInitial);
 
         // Save the best scenario
         if (cost_i < bestCost || bestCost < 0) {
@@ -166,13 +164,27 @@ int RandomizedDTSP::run(Graph &G, GraphAttributes &GA, double x, double r,
             
     } // for (int i = 0; i < ALGORITHM_ITERATIONS; i++) 
 
+    float elapsedTimeTotal = tTotal->diffMs();
+
     // Use the best scenario
     cost = bestCost;
     Headings = BestHeadings;
     Tour = BestTour;
 
+    // Remove return node in tour if necessary
+    if (!returnToInitial && Tour.size() > G.numberOfNodes()) {
+        Tour.popBack();
+    }
+
     // Create edges
-    cost = createDubinsTourEdges(G, GA, Tour, Headings, r, Edges, true); // TODO add return cost parameter  to main
+    cost = createDubinsTourEdges(G, GA, Tour, Headings, r, Edges, returnToInitial);
+
+    // Debug print info
+    Logger::logDebug(DPP_LOGGER_VERBOSE_1) << "Solved " << G.numberOfNodes()
+        << " point tour with cost " << cost << " (" << elapsedTimeTotal<< " ms)." << std::endl;
+    Logger::logDebug(DPP_LOGGER_VERBOSE_2) << dpp::printHeadings(G, GA, Headings);
+    Logger::logDebug(DPP_LOGGER_VERBOSE_2) << dpp::printTour(G, GA, Tour);
+    Logger::logDebug(DPP_LOGGER_VERBOSE_1) << dpp::printEdges(G, GA, Edges);
 
     // Cleanup
     if (std::remove(tspFilename.c_str()) != 0 

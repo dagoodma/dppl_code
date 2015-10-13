@@ -1,14 +1,10 @@
 /*
- * Copyright (C) 2014-2015 DubinsAreaCoverage.
+ * Copyright (C) 2014-2015 DubinsSensorCoverage.
  * Created by David Goodman <dagoodma@gmail.com>
  * Redistribution and use of this file is allowed according to the terms of the MIT license.
- * For details see the COPYRIGHT file distributed with DubinsAreaCoverage.
+ * For details see the COPYRIGHT file distributed with DubinsSensorCoverage.
 */
-#include "mex.h"
-
-#define USE_MEX_MODE 
-#include "../randomizedDTSP.cpp"
-
+#include "solveDTSP.h"
 
 /* The gateway function */
 void mexFunction( int nlhs, mxArray *plhs[],

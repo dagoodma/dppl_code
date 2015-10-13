@@ -84,8 +84,6 @@ public:
     { }
 
     ~AlgorithmCPP() {
-        Logger::logDebug() << "Destructing " << typeid(*this).name() << " at line "
-            << __LINE__ << " in file " << __FILE__ << "." << std::endl;
     }
 
     virtual int run(void) = 0;

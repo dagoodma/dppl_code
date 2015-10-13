@@ -7,11 +7,26 @@
 
 #include <dpp/basic/basic.h>
 
+#define DPP_LOGGER_DEFAULT_VERBOSE  LV_VERBOSE_0
+
+// Set logger level to debug if compiled in debug mode
+#ifdef DPP_DEBUG
+#define DPP_LOGGER_DEFAULT_LEVEL    LL_DEBUG
+#else
+#define DPP_LOGGER_DEFAULT_LEVEL    LL_INFO
+#endif
+
+#define DPP_LOGGER_VERBOSE_0    (dpp::Logger::Verbosity::LV_VERBOSE_0)
+#define DPP_LOGGER_VERBOSE_1    (dpp::Logger::Verbosity::LV_VERBOSE_1)
+#define DPP_LOGGER_VERBOSE_2    (dpp::Logger::Verbosity::LV_VERBOSE_2)
+#define DPP_LOGGER_VERBOSE_3    (dpp::Logger::Verbosity::LV_VERBOSE_3)
+
 namespace dpp {
 
 class Logger {
 public:
     enum Level { LL_DEBUG, LL_INFO, LL_WARN, LL_ERROR };
+    enum Verbosity { LV_VERBOSE_0 = 0, LV_VERBOSE_1, LV_VERBOSE_2, LV_VERBOSE_3 }; // ascending verbosity
 
     ~Logger();
 
@@ -20,47 +35,60 @@ public:
     static void initializeLogger(std::ostream &ostream);
 
     static void initializeLogger(std::string logFilename);
-    static std::ostream & logOut(Logger::Level l=
-#ifndef DPP_DEBUG
-        LL_INFO);
-#else
-        LL_DEBUG);
-#endif
 
-    static std::ostream & logDebug() {
-        return logOut(Logger::Level::LL_DEBUG);
+    static std::ostream & logOut(Logger::Level l = LL_INFO,
+        Logger::Verbosity v = LV_VERBOSE_0);
+
+    static std::ostream & logDebug(Logger::Verbosity v = LV_VERBOSE_0) {
+        return logOut(Logger::Level::LL_DEBUG, v);
     }
 
-    static std::ostream & logInfo() {
-        return logOut();
+    static std::ostream & logInfo(Logger::Verbosity v = LV_VERBOSE_0) {
+        return logOut(Logger::Level::LL_INFO, v);
     }
 
-    static std::ostream & logWarn() {
-        return logOut(Logger::Level::LL_WARN);
+    static std::ostream & logWarn(Logger::Verbosity v = LV_VERBOSE_0) {
+        return logOut(Logger::Level::LL_WARN, v);
     }
 
-    static std::ostream & logError() {
-        return logOut(Logger::Level::LL_ERROR);
+    static std::ostream & logError(Logger::Verbosity v = LV_VERBOSE_0) {
+        return logOut(Logger::Level::LL_ERROR, v);
     }
 
     Level level(void) {
-        return m_loglevel;
+        return m_level;
     }
 
     void level(Level l) {
-        m_loglevel = l;
+        m_level = l;
+    }
+
+    Verbosity verbose(void) {
+        return m_verbosity;
+    }
+
+    void verbose(int i) {
+        DPP_ASSERT(i >= DPP_LOGGER_VERBOSE_0);
+        m_verbosity = static_cast<Verbosity>(i);
+    }
+
+    bool isUsingFile(void) {
+        return m_useFile;
     }
 
 private:
     // Functions
+    // TODO add dual stream (cout and file)
     Logger() 
         : m_logger(),
         m_logFile(),
-        m_useFile(false)
+        m_useFile(false),
+        m_verbosity(DPP_LOGGER_DEFAULT_VERBOSE),
+        m_level(DPP_LOGGER_DEFAULT_LEVEL)
     { }
-    Logger(Logger const&) // copy constructor is private
+    Logger(Logger const&) // copy constructor is private for singleton class
     { }
-    Logger& operator=(Logger const&) // assignment is private
+    Logger& operator=(Logger const&) // assignment is private ------"------
     { }
 
     // Attributes
@@ -68,7 +96,8 @@ private:
     static std::ostream nullStream;
     ogdf::Logger m_logger;
     std::ofstream m_logFile;
-    Level m_loglevel;
+    Level m_level;
+    Verbosity m_verbosity;
     bool m_useFile;
 };
 
