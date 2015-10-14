@@ -7,8 +7,12 @@
  * For details see the LICENSE file distributed with DubinsPathPlanner.
  */
 #include <ogdf/fileformats/GraphIO.h>
+#include <ogdf/basic/EdgeArray.h>
+
+using ogdf::EdgeArray;
 
 #include <dpp/basic/basic.h>
+#include <dpp/basic/Util.h>
 #include <dpp/planner/PathPlanner.h>
 #include <dpp/planner/DubinsVehiclePathPlanner.h>
 
@@ -25,13 +29,21 @@ void DubinsVehiclePathPlanner::addWaypoints(std::string gmlFilename) {
 }
 
 /*
- * Copy the graph.
+ * Copy the given Graph and attributes to add waypoints.
+ * @note Existing waypoints are deleted.
  */
 void DubinsVehiclePathPlanner::addWaypoints(ogdf::Graph &G, ogdf::GraphAttributes &GA) {
-    m_G = G;
-    m_GA = GA;
+    DPP_ASSERT(G.numberOfEdges() == 0); // TODO just clear edges
+    m_G.clear();
+    // Do we need to worry about resetting attributes too?
+    //m_GA.init(m_G, m_GA.attributes());
+
+    // Copy graph and attributes
+    int n = copyGraph(G, GA, m_G, m_GA);
     m_Headings.init(m_G);
-    Logger::logDebug(DPP_LOGGER_VERBOSE_1) << "Copied graph with " << waypointCount() << " nodes." << std::endl;
+
+    Logger::logDebug(DPP_LOGGER_VERBOSE_1) << "Copied " << n << " nodes from graph " << &G << " with " << waypointCount()
+        << " nodes into graph " << &m_G << std::endl;
 }
 
 /*
@@ -58,19 +70,48 @@ bool DubinsVehiclePathPlanner::solve(void) {
 }
 
 /**
- * Copy the solution results into the given objects.
+ * Copy the solution (Graph, Tour, Edges, and Headings) into the ones given.
+ * @note Existing nodes and edges are cleared.
  */
 void DubinsVehiclePathPlanner::copySolution(ogdf::Graph &G, ogdf::GraphAttributes &GA,
         ogdf::List<ogdf::node> &Tour, ogdf::List<ogdf::edge> &Edges,
         NodeArray<double> &Headings, double &cost) {
     DPP_ASSERT(m_haveSolution);
 
-    G = m_G;
-    GA = m_GA;
-    Tour = m_Tour;
-    Edges = m_Edges;
-    Headings = m_Headings;
+    // Copy the graph and attributes
+    NodeArray<node> nodeCopyTable(m_G);
+    EdgeArray<edge> edgeCopyTable(m_G);
+    int n = copyGraph(m_G, m_GA, G, GA, nodeCopyTable, edgeCopyTable);
+
+    // Copy the tour
+    ogdf::ListIterator<ogdf::node> tourIter;
+    for ( tourIter = m_Tour.begin(); tourIter != m_Tour.end(); tourIter++ ) {
+        node u = *tourIter;
+        node ucopy = nodeCopyTable(u);
+        Tour.pushBack(ucopy);
+    }
+
+    // Copy the edge list
+    ogdf::ListIterator<ogdf::edge> edgeIter;
+    for ( edgeIter = m_Edges.begin(); edgeIter != m_Edges.end(); edgeIter++ ) {
+        edge e = *edgeIter;
+        edge ecopy = edgeCopyTable(e);
+        Edges.pushBack(ecopy);
+    }
+
+    // Copy the headings
+    Headings.init(G);
+    node u;
+    forall_nodes(u,m_G) {
+        node ucopy = nodeCopyTable(u);
+        Headings(ucopy) = m_Headings(u);
+    }
+
+    // Copy the cost
     cost = m_cost;
+
+    Logger::logDebug(DPP_LOGGER_VERBOSE_1) << "Copied " << n << " nodes from graph " << &m_G << " with " << waypointCount()
+        << " nodes into graph " << &G << std::endl;
 }
 
 /*
@@ -91,6 +132,7 @@ void DubinsVehiclePathPlanner::algorithm(PlanningAlgorithm algId) {
             Logger::logDebug() << "Set DTSP algorithm to RANDOMIZED." << std::endl;
             break;
         default:
+            DPP_ASSERT(0 && "Unknown planning algorithm");
             Logger::logError() << "Unknown planning algorithm: " << algId << std::endl;
             return;
     } // switch (algId)

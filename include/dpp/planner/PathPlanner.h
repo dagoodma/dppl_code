@@ -27,7 +27,7 @@ public:
         m_haveSolution(false),
         m_returnToInitial(true),
         m_initialHeading(0.0),
-        m_cost(-1),
+        m_cost(0),
         m_Tour(),
         m_Edges(),
         m_Headings(m_G),
@@ -90,6 +90,10 @@ public:
     }
 
     virtual bool solve(void) = 0;
+
+    bool haveSolution(void) {
+        return m_haveSolution;
+    }
 
 protected:
     std::unique_ptr<dpp::Algorithm> m_algorithm;

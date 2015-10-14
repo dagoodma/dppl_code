@@ -1,5 +1,6 @@
 # CMakeLists
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+set(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR})
 
 #ADD_EXECUTABLE( nearestNeighborDTSP nearestNeighborDTSP.cpp Dubins.cpp )
 #ADD_EXECUTABLE( computeDubinsDistancesATSP computeDubinsDistancesATSP.cpp Dubins.cpp TSPLib.cpp )

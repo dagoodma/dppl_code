@@ -39,6 +39,7 @@ void alternatingAlgorithm(Graph &G, GraphAttributes &GA, List<node> &Tour,
 
     // We don't want to iterate over the last point in the tour, since we're
     // looking at each node's successor. Hence: i < tour.size()
+    node u_last;
     for ( iter = Tour.begin(); (i < Tour.size() && iter != Tour.end()); iter++ ) {
         node u = *iter, v = *(iter.succ());
 
@@ -63,7 +64,7 @@ void alternatingAlgorithm(Graph &G, GraphAttributes &GA, List<node> &Tour,
         else {
             node w = *(iter.pred());
             #ifdef USE_INITIAL_HEADING
-            if (v == nodeStart)
+            if (u_last == nodeStart)
             {
                 // Use heading from initial position to current
                 Vector2d uv(GA.x(nodeStart), GA.y(nodeStart));
@@ -74,7 +75,7 @@ void alternatingAlgorithm(Graph &G, GraphAttributes &GA, List<node> &Tour,
             #endif
             {
                 // Use heading of previous node
-                Headings[u] = Headings[v];
+                Headings[u] = Headings[u_last];
             }
         }
 
@@ -84,6 +85,7 @@ void alternatingAlgorithm(Graph &G, GraphAttributes &GA, List<node> &Tour,
 
         Logger::logDebug(DPP_LOGGER_VERBOSE_2) << Headings[u] << " rad" << std::endl;
         i++;
+        u_last = u;
     }
 }
 
@@ -120,6 +122,8 @@ int AlternatingDTSP::run(Graph &G, GraphAttributes &GA, double x, double r,
     int n = G.numberOfNodes();
 
     Logger::logDebug(DPP_LOGGER_VERBOSE_2) << "Found " << n << " nodes, and " << m << " edges." << std::endl;
+
+    Logger::logDebug(DPP_LOGGER_VERBOSE_3) << printGraph(G, GA) << std::endl;
 
     // Generate temporary TSP and PAR files
     Headings(G.firstNode()) = x;

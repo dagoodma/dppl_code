@@ -7,9 +7,13 @@
 #include <math.h>
 #include <iostream>
 #include <vector>
+#include <ctime>
+#include <cstdlib>
 
 #include <gtest/gtest.h>
 #include <Eigen/Dense>
+
+#include <ogdf/basic/List.h>
 
 #include <dpp/basic/Util.h>
 
@@ -20,6 +24,7 @@ using ogdf::List;
 using ogdf::ListIterator;
 using ogdf::ListConstIterator;
 using ogdf::NodeArray;
+using ogdf::DPoint;
 
 using std::vector;
 
@@ -226,3 +231,253 @@ TEST_F(ClearEdgesTest, TwoEdges) {
     EXPECT_EQ(0, GetSize());
 }
 
+// --------------------- graphsAreEquivalent() -------------------
+
+// These nodes are used in several tests
+const List<DPoint> nodes {
+    {0, 0},
+    {5.1, 0.0},
+    {5.1, -3.3}
+};
+
+class GraphsAreEquivalentTest : public Test {
+public:
+    GraphsAreEquivalentTest()
+        : m_G(),
+          m_GA (m_G, DPP_GRAPH_ATTRIBUTES ),
+          m_Gcopy(),
+          m_GAcopy(m_Gcopy, DPP_GRAPH_ATTRIBUTES)
+    { }
+
+    virtual ~GraphsAreEquivalentTest() { }
+
+    virtual void SetUp() {
+        // Add nodes to original
+        int i = 1;
+        ListConstIterator<DPoint> iter;
+        for ( iter = nodes.begin(); iter != nodes.end(); iter++ ) {
+            DPoint Pu = *iter;
+            node u = m_G.newNode();
+            m_GA.x(u) = Pu.m_x;
+            m_GA.y(u) = Pu.m_y;
+            m_GA.idNode(u) = i;
+            i++;
+        }
+
+        // Add the same nodes to copy
+        int icopy = 1;
+        for ( iter = nodes.begin(); iter != nodes.end(); iter++ ) {
+            DPoint Pu = *iter;
+            node u = m_Gcopy.newNode();
+            m_GAcopy.x(u) = Pu.m_x;
+            m_GAcopy.y(u) = Pu.m_y;
+            m_GAcopy.idNode(u) = icopy;
+            icopy++;
+        }
+
+        // Generate random seed for edge weight generation
+        srand (static_cast <unsigned> (time(0)));
+    } // SetUp()
+
+    virtual void TearDown() {
+    } // TearDown()
+
+    // Returns a random from 0 to 1.0
+    double getRandomEdgeWeight(void) {
+        return static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+    }
+
+    // Add directed edges between nodes in index order with random weights
+    void addEdges() {
+        node u, v;
+        forall_nodes(v,m_G) {
+            // Skip the first node
+            if (m_G.firstNode() == v) {
+                u = v;
+                continue;
+            }
+            edge e = m_G.newEdge(u, v);
+            // Generate: w = [0, 1.0]
+            float w = getRandomEdgeWeight();
+            m_GA.doubleWeight(e) = w;
+            u = v;
+        }
+        forall_nodes(v,m_Gcopy) {
+            // Skip the first node
+            if (m_Gcopy.firstNode() == v) {
+                u = v;
+                continue;
+            }
+            edge e = m_Gcopy.newEdge(u, v);
+            // Generate: w = [0, 1.0]
+            float w = getRandomEdgeWeight();
+            m_GAcopy.doubleWeight(e) = w;
+            u = v;
+        }
+    }
+
+protected:
+    Graph m_G, m_Gcopy;
+    GraphAttributes m_GA, m_GAcopy;
+
+}; // class GraphsAreEquivalentTest 
+
+// Test for equivalence with empty graphs
+TEST_F(GraphsAreEquivalentTest, EmptyGraphsAreEquivalent) {
+    Graph G, Gcopy;
+    GraphAttributes GA(G, DPP_GRAPH_ATTRIBUTES),
+        GAcopy(Gcopy, DPP_GRAPH_ATTRIBUTES);
+
+    ASSERT_EQ(0, G.numberOfNodes());
+    ASSERT_EQ(0, Gcopy.numberOfNodes());
+    ASSERT_EQ(0, G.numberOfEdges());
+    ASSERT_EQ(0, Gcopy.numberOfEdges());
+
+    EXPECT_EQ(1, dpp::graphsAreEquivalent(G, GA, Gcopy, GAcopy));
+}
+
+// Test for equivalence with empty graphs
+TEST_F(GraphsAreEquivalentTest, SimpleGraphsNotEquivalent) {
+    Graph G, Gcopy;
+    GraphAttributes GA(G, DPP_GRAPH_ATTRIBUTES),
+        GAcopy(Gcopy, DPP_GRAPH_ATTRIBUTES);
+
+    node u = G.newNode();
+    GA.x(u) = getRandomEdgeWeight();
+    GA.x(u) = getRandomEdgeWeight();
+    GA.idNode(u) = 1;
+
+    ASSERT_EQ(1, G.numberOfNodes());
+    ASSERT_EQ(0, Gcopy.numberOfNodes());
+    ASSERT_EQ(0, G.numberOfEdges());
+    ASSERT_EQ(0, Gcopy.numberOfEdges());
+
+    EXPECT_EQ(0, dpp::graphsAreEquivalent(G, GA, Gcopy, GAcopy));
+}
+
+// Test for equivalence with node-only graphs
+TEST_F(GraphsAreEquivalentTest, NodeOnlyGraphsAreEquivalent) {
+    int expectedSize = nodes.size();
+    ASSERT_EQ(expectedSize, m_G.numberOfNodes());
+    ASSERT_EQ(expectedSize, m_Gcopy.numberOfNodes());
+
+    EXPECT_EQ(1, dpp::graphsAreEquivalent(m_G, m_GA, m_Gcopy, m_GAcopy));
+}
+
+// Test for equivalence with full graphs
+TEST_F(GraphsAreEquivalentTest, GraphsAreEquivalent) {
+    int expectedSize = nodes.size();
+    ASSERT_EQ(expectedSize, m_G.numberOfNodes());
+    ASSERT_EQ(expectedSize, m_Gcopy.numberOfNodes());
+
+    addEdges();
+    ASSERT_EQ(m_G.numberOfNodes() - 1, m_G.numberOfEdges());
+    ASSERT_EQ(m_G.numberOfNodes() - 1, m_Gcopy.numberOfEdges());
+
+    EXPECT_EQ(1, dpp::graphsAreEquivalent(m_G, m_GA, m_Gcopy, m_GAcopy));
+}
+
+// --------------------- copyGraph() -------------------
+class GraphCopyTest : public Test {
+public:
+    GraphCopyTest()
+        : m_G(),
+          m_GA (m_G, DPP_GRAPH_ATTRIBUTES ),
+          m_Gcopy(),
+          m_GAcopy (m_Gcopy, DPP_GRAPH_ATTRIBUTES )
+    { }
+
+    virtual ~GraphCopyTest() { }
+
+    virtual void SetUp() {
+        // Add nodes
+        int i = 1;
+        ListConstIterator<DPoint> iter;
+        for ( iter = nodes.begin(); iter != nodes.end(); iter++ ) {
+            DPoint Pu = *iter;
+            node u = m_G.newNode();
+            m_GA.x(u) = Pu.m_x;
+            m_GA.y(u) = Pu.m_y;
+            m_GA.idNode(u) = i;
+            i++;
+        }
+        // Generate random seed for edge weight generation
+        srand (static_cast <unsigned> (time(0)));
+    } // SetUp()
+
+    virtual void TearDown() {
+    } // TearDown()
+
+    // Add directed edges between nodes in index order with random weights
+    void addEdges() {
+        node u, v;
+        forall_nodes(v,m_G) {
+            // Skip the first node
+            if (m_G.firstNode() == v) {
+                u = v;
+                continue;
+            }
+            edge e = m_G.newEdge(u, v);
+            float w = getRandomEdgeWeight();
+            m_GA.doubleWeight(e) = w;
+        }
+    }
+
+    // Returns a random from 0 to 1.0
+    double getRandomEdgeWeight(void) {
+        return static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+    }
+
+protected:
+    Graph m_G, m_Gcopy;
+    GraphAttributes m_GA, m_GAcopy;
+
+}; // class GraphCopyTest 
+
+TEST_F(GraphCopyTest, CopiesNodesOnly) {
+    ASSERT_GT(m_G.numberOfNodes(), 0);
+    ASSERT_EQ(m_G.numberOfEdges(), 0);
+    ASSERT_EQ(m_Gcopy.numberOfNodes(), 0);
+    ASSERT_EQ(m_Gcopy.numberOfEdges(), 0);
+
+    int n = dpp::copyGraph(m_G, m_GA, m_Gcopy, m_GAcopy);
+
+    EXPECT_EQ(m_G.numberOfNodes(), n);
+
+    EXPECT_EQ(true, dpp::graphsAreEquivalent(m_G, m_GA, m_Gcopy, m_GAcopy)); 
+}
+
+TEST_F(GraphCopyTest, ClearsExistingNodes) {
+    ASSERT_GT(m_G.numberOfNodes(), 0);
+    ASSERT_EQ(m_G.numberOfEdges(), 0);
+    ASSERT_EQ(m_Gcopy.numberOfNodes(), 0);
+    ASSERT_EQ(m_Gcopy.numberOfEdges(), 0);
+
+    node u = m_Gcopy.newNode();
+    m_GAcopy.x(u) = 0.5;
+    m_GAcopy.y(u) = 0.77;
+    m_GAcopy.idNode(u) = 1;
+
+    ASSERT_EQ(1, m_Gcopy.numberOfNodes());
+
+    int n = dpp::copyGraph(m_G, m_GA, m_Gcopy, m_GAcopy);
+
+    EXPECT_EQ(m_G.numberOfNodes(), n);
+
+    EXPECT_EQ(true, dpp::graphsAreEquivalent(m_G, m_GA, m_Gcopy, m_GAcopy)); 
+}
+/*
+TEST_F(GraphCopyTest, CopiesNodesAndEdges) {
+    ASSERT_GT(m_G.numberOfNodes(), 0);
+    ASSERT_EQ(m_G.numberOfEdges(), 0);
+
+    addEdges();
+    ASSERT_EQ(m_G.numberOfNodes() - 1, m_G.numberOfEdges());
+
+    int n = dpp::copyGraph(m_G, m_GA, Gcopy, GAcopy);
+
+    EXPECT_EQ(m_G.numberOfNodes(), n);
+
+    EXPECT_EQ(true, dpp::graphsAreEquivalent(m_G, m_GA, m_Gcopy, m_GAcopy)); 
+}
+*/

@@ -43,16 +43,18 @@
     p.initialHeading(x);
     p.turnRadius(r);
     p.returnToInitial(returnToInitial);
-    p.solve();
+    if (!p.solve()) {
+        return FAILURE;
+    }
 
     // Get the results
-    //p.copySolution(G, GA, Edges, Headings, Tour, cost);
+    p.copySolution(G, GA, Tour, Edges, Headings, cost);
     //G = *(p.graphPtr());
     //GA = p.graphAttributes();
-    Edges = p.edges();
-    Headings = p.headings();
-    Tour = p.tour();
-    cost = p.cost();
+    //Edges = p.edges();
+    //Headings = p.headings();
+    //Tour = p.tour();
+    //cost = p.cost();
 
     //cout << "Solved " << G.numberOfNodes() << " point tour with cost " << cost << "." << endl;
 

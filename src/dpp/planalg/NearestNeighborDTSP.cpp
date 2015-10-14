@@ -69,6 +69,9 @@ int NearestNeighborDTSP::run(Graph &G, GraphAttributes &GA, double x, double r,
     if (G.numberOfNodes() < 2) {
         throw std::out_of_range("Expected G to have at least 2 nodes");
     }
+    if (G.numberOfEdges() > 0) {
+        throw std::out_of_range("Expected G to have 0 edges");
+    }
 
     int m = G.numberOfEdges();
     int n = G.numberOfNodes();

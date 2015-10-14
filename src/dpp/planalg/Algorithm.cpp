@@ -40,6 +40,9 @@ int Algorithm::runLKHSolver(std::string parFilename) {
     cmd += parFilename;
 
 #if defined (__unix__) || (defined (__APPLE__) && defined (__MACH__))
+    #include <errno.h>
+    Logger::logDebug(DPP_LOGGER_VERBOSE_2) << "Running LKH Solver with popen(): "
+        << const_cast<char*>(cmd.c_str()) << std::endl;
     FILE *pFile = popen(const_cast<char*>(cmd.c_str()), "r");
     // Read through stdout until it ends
     // TODO add error checking/parsing here
@@ -51,7 +54,14 @@ int Algorithm::runLKHSolver(std::string parFilename) {
      }
 
     result = pclose(pFile);
+    // Additional error reporting in Unix
+    if (result != SUCCESS) {
+        int errsv = errno;
+        Logger::logError() << "Failed with error code: " << errsv << std::endl;
+    }
 #else
+    Logger::logDebug(DPP_LOGGER_VERBOSE_2) << "Running LKH Solver with system(): "
+        const_cast<char*>(cmd.c_str()) << std::endl;
     // If we don't have open, stdout is printed to terminal
     result = system(const_cast<char*>(cmd.c_str()));
 #endif

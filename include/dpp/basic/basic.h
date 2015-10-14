@@ -1,6 +1,6 @@
 #ifndef _DPP_BASIC_H_
 #define _DPP_BASIC_H_
-//#include <stdio.h>
+#include <ogdf/basic/GraphAttributes.h>
 
 #ifdef DPP_DEBUG
 #include <assert.h>
@@ -17,8 +17,17 @@
 #define FAILURE (-1)
 #define SUCCESS (0)
 
-namespace dpp {
+#define DPP_GRAPH_ATTRIBUTES ( \
+            GraphAttributes::nodeGraphics | \
+            GraphAttributes::edgeGraphics | \
+            GraphAttributes::nodeLabel | \
+            GraphAttributes::edgeStyle | \
+            GraphAttributes::edgeDoubleWeight | \
+            GraphAttributes::nodeStyle | \
+            GraphAttributes::nodeTemplate | \
+            GraphAttributes::nodeId)
 
+namespace dpp {
 
 } // namespace dpp
 

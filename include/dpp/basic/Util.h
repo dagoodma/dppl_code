@@ -7,6 +7,7 @@
 
 #include <ogdf/basic/Graph.h>
 #include <ogdf/basic/GraphAttributes.h>
+#include <ogdf/basic/NodeArray.h>
 
 #include <Eigen/Dense>
 
@@ -96,7 +97,7 @@ inline double headingBetween(Vector3d u, Vector3d v) {
     return headingBetween(u2,v2);
 }
 
-/*
+/**
  * Clears all edges in the graph.
  */
 inline void clearEdges(ogdf::Graph &G) {
@@ -108,12 +109,107 @@ inline void clearEdges(ogdf::Graph &G) {
     }
 }
 
+/**
+ * Copies all nodes and attributes from one graph to another.
+ * @param G     Graph to copy from.
+ * @param GA    Attributes for G.
+ * @param Gcopy Graph to copy to.
+ * @param GAcopy Attributes for Gcopy.
+ * @param nodeCopyTable Optional argument for saving the node translation table. 
+ * @param edgeCopyTable Optional argument for saving the edge translation table. 
+ * @return Number of nodes copied or FAILURE.
+ * @note The copy graph will be cleared.
+ */
+inline int copyGraph(ogdf::Graph &G, ogdf::GraphAttributes &GA,
+    ogdf::Graph &Gcopy, ogdf::GraphAttributes &GAcopy,
+    ogdf::NodeArray<ogdf::node> &nodeCopyTable,
+    ogdf::EdgeArray<ogdf::edge> &edgeCopyTable) {
+    DPP_ASSERT(&(GA.constGraph()) == const_cast<const ogdf::Graph*>(&G));
+    DPP_ASSERT(&(GAcopy.constGraph()) == const_cast<const ogdf::Graph*>(&Gcopy));
+    Gcopy.clear();
 
+    // Copy graph nodes and attributes (x, y, and id)
+    ogdf::node u;
+    int i = 0;
+    forall_nodes(u,G) {
+        ogdf::node v = Gcopy.newNode();
+        GAcopy.x(v) = GA.x(u);
+        GAcopy.y(v) = GA.y(u);
+        GAcopy.idNode(v) = GA.idNode(u);
+        nodeCopyTable(u) = v;
+        i++;
+    }
+
+    // Copy edges and attributes (weight)
+    ogdf::edge e;
+    forall_edges(e,G) {
+        ogdf::node ucopy = nodeCopyTable(e->source());
+        ogdf::node vcopy = nodeCopyTable(e->target());
+        ogdf::edge f = Gcopy.newEdge(ucopy, vcopy);
+        GAcopy.doubleWeight(f) = GA.doubleWeight(e);
+        edgeCopyTable(e) = f;
+    }
+
+    return i;
+}
+
+inline int copyGraph(ogdf::Graph &G, ogdf::GraphAttributes &GA,
+    ogdf::Graph &Gcopy, ogdf::GraphAttributes &GAcopy) {
+    ogdf::NodeArray<ogdf::node> nodeCopyTable(G);
+    ogdf::EdgeArray<ogdf::edge> edgeCopyTable(G);
+    return copyGraph(G, GA, Gcopy, GAcopy, nodeCopyTable, edgeCopyTable);
+}
 
 /**
- * Prints a list of all nodes and their (x,y) positions.
+ * Compares the Graphs' layout (x,y,id) and edges (doubleWeight) for equivalence.
+ * @return true if the graphs are equivalent
  */
+inline bool graphsAreEquivalent(ogdf::Graph &G, ogdf::GraphAttributes &GA, ogdf::Graph &Gcopy,
+    ogdf::GraphAttributes &GAcopy) {
+    if (!(G.numberOfNodes() == Gcopy.numberOfNodes()
+        && G.numberOfEdges() == Gcopy.numberOfEdges())) {
+        return false;
+    }
+    ogdf::NodeArray<ogdf::node> nodeCopyTable(G);
+    ogdf::node u;
+    ogdf::node ucopy = Gcopy.firstNode();
+    forall_nodes(u,G) {
+        if (!(GA.x(u) == GAcopy.x(ucopy)
+            && GA.y(u) == GAcopy.y(ucopy)
+            && GA.idNode(u) == GAcopy.idNode(ucopy))) {
+            return false;
+        }
+        nodeCopyTable(u) = ucopy;
+        ucopy = ucopy->succ();
+    }
 
+    ogdf::edge e;
+    ogdf::edge ecopy = Gcopy.firstEdge();
+    forall_edges(e,G) {
+        ogdf::node u = e->source();
+        ogdf::node v = e->target();
+        double w = GA.doubleWeight(e);
+
+        ogdf::node ucopy = ecopy->source();
+        ogdf::node vcopy = ecopy->target();
+        double wcopy = GA.doubleWeight(e);
+        if (!(ucopy == nodeCopyTable(u)
+            && vcopy == nodeCopyTable(v)
+            && wcopy == w)) {
+            return false;
+        }
+        ecopy = ecopy->succ();
+    }
+
+    return true;
+}
+
+/**
+ * Prints a list of all nodes and their (x,y) positions to a string.
+ * @param G     A graph with edges.
+ * @param GA    Attributes of the graph.
+ * @return A string with the printed graph.
+ */
 inline std::string printGraph(ogdf::Graph &G, ogdf::GraphAttributes &GA) {
     std::stringstream sout;
 
@@ -136,6 +232,13 @@ inline std::string printGraph(ogdf::Graph &G, ogdf::GraphAttributes &GA) {
     return sout.str();
 }
 
+/**
+ * Prints all edges in the list to a string.
+ * @param G     A graph with edges.
+ * @param GA    Attributes of the graph.
+ * @param Edges An edge list to print.
+ * @return A string with the edge list.
+ */
 inline std::string printEdges(ogdf::Graph &G, ogdf::GraphAttributes &GA,
     ogdf::List<ogdf::edge> &Edges) {
     std::stringstream sout;
@@ -153,6 +256,13 @@ inline std::string printEdges(ogdf::Graph &G, ogdf::GraphAttributes &GA,
     return sout.str();
 }
 
+/**
+ * Prints the tour to a string.
+ * @param G     A graph with edges.
+ * @param GA    Attributes of the graph.
+ * @param Tour  A list of nodes representing the tour.
+ * @return A string with the tour.
+ */
 inline std::string printTour(ogdf::Graph &G, ogdf::GraphAttributes &GA,
     ogdf::List<ogdf::node> &Tour) {
     std::stringstream sout;
@@ -169,21 +279,11 @@ inline std::string printTour(ogdf::Graph &G, ogdf::GraphAttributes &GA,
 }
 
 /**
- * Print headings
- */
- /*
-inline void printHeadings(ogdf::Graph &G, ogdf::GraphAttributes &GA,
-    ogdf::NodeArray<double> &Headings, std::ostream &out=std::cout) {
-    ogdf::node u;
-    out << "Headings: " << endl;
-    forall_nodes(u,G) {
-        out << "   Node " << GA.idNode(u) << ": " << Headings[u] << " rad." << std::endl;
-    }
-}
-*/
-
-/**
- * Print headings
+ * Prints all headings in the node array.
+ * @param G     A graph with edges.
+ * @param GA    Attributes of the graph.
+ * @param Headings A node array of headings for each node.
+ * @return A string with the headings.
  */
 inline std::string printHeadings(ogdf::Graph &G, ogdf::GraphAttributes &GA,
     ogdf::NodeArray<double> &Headings) {
