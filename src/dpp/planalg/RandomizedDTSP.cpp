@@ -188,8 +188,8 @@ int RandomizedDTSP::run(Graph &G, GraphAttributes &GA, double x, double r,
 
     // Cleanup
     if (std::remove(tspFilename.c_str()) != 0 
-        && std::remove(parFilename.c_str()) != 0
-        && std::remove(tourFilename.c_str()) != 0) {
+        || std::remove(parFilename.c_str()) != 0
+        || std::remove(tourFilename.c_str()) != 0) {
         throw std::runtime_error("Failed to delete temporary files.");
     }
 

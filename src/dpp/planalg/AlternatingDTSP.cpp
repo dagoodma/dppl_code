@@ -87,6 +87,16 @@ void alternatingAlgorithm(Graph &G, GraphAttributes &GA, List<node> &Tour,
         i++;
         u_last = u;
     }
+
+    // Set heading of the last node in the tour to it's predecessor's heading
+    // if it's not the first node.
+    if (Tour.back() != Tour.front()) {
+        iter = Tour.rbegin();
+        node u = *iter;
+        iter--; // reverse iterator decrements
+        node v = *iter;
+        Headings[u] = Headings[v];
+    }
 }
 
 /**
@@ -181,8 +191,8 @@ int AlternatingDTSP::run(Graph &G, GraphAttributes &GA, double x, double r,
 
     // Cleanup
     if (std::remove(tspFilename.c_str()) != 0 
-        && std::remove(parFilename.c_str()) != 0
-        && std::remove(tourFilename.c_str()) != 0) {
+        || std::remove(parFilename.c_str()) != 0
+        || std::remove(tourFilename.c_str()) != 0) {
         throw std::runtime_error("Failed to delete temporary files.");
     }
 
