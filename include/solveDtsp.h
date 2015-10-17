@@ -10,10 +10,9 @@
 #include <ogdf/basic/NodeArray.h>
 #include <dpp/planner/DubinsVehiclePathPlanner.h>
 
-typedef dpp::DubinsVehiclePathPlanner::PlanningAlgorithm PlanningAlgorithm;
-
-int solveDTSP(ogdf::Graph &G, ogdf::GraphAttributes &GA, double x, double r,
+int solveDtsp(ogdf::Graph &G, ogdf::GraphAttributes &GA, double x, double r,
     ogdf::List<ogdf::node> &Tour, ogdf::List<ogdf::edge> &Edges, NodeArray<double> &Headings,
-    double &cost, bool returnToInitial = true, PlanningAlgorithm alg=PlanningAlgorithm::RANDOMIZED);
+    double &cost, bool returnToInitial = true,
+    dpp::DtspPlanningAlgorithm alg=dpp::DtspPlanningAlgorithm::ALTERNATING);
 
 #endif // _DPP_SOLVE_DTSP_H_

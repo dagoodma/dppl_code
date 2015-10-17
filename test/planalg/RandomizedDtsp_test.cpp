@@ -11,8 +11,8 @@
 #include <gtest/gtest.h>
 
 #include <dpp/basic/Logger.h>
+#include <dpp/planalg/RandomizedDtsp.h>
 #include <dpp/basic/Util.h>
-#include <dpp/planalg/NearestNeighborDTSP.h>
 
 using ogdf::node;
 using ogdf::edge;
@@ -25,7 +25,7 @@ using ogdf::ListConstIterator;
 using ogdf::NodeArray;
 
 #define TURN_RADIUS     1.0
-#define EPSILON_ERROR   0.0001 // error margin in length calculation
+#define EPSILON_RANDOM_COST_ERROR (5.0*TURN_RADIUS) // stddev of solution cost
 
 
 // Value-parameterized tests for dubinsTourCost()
@@ -43,9 +43,9 @@ const List<DPoint> nodes {
     {5.1*TURN_RADIUS, -6.6*TURN_RADIUS}
 };
 
-class NearestNeighborDTSPTest : public Test {
+class RandomizedDtspTest : public Test {
 public:
-    NearestNeighborDTSPTest()
+    RandomizedDtspTest()
         : m_G(),
           m_GA (m_G, 
             GraphAttributes::nodeGraphics | 
@@ -62,7 +62,7 @@ public:
           m_alg()
     { }
 
-    virtual ~NearestNeighborDTSPTest() { }
+    virtual ~RandomizedDtspTest() { }
 
     virtual void SetUp() {
         int m = nodes.size();
@@ -96,12 +96,12 @@ protected:
     double m_cost;
     const double m_turnRadius;
     double m_initialHeading;
-    dpp::NearestNeighborDTSP m_alg;
+    dpp::RandomizedDtsp m_alg;
 
-}; // class NearestNeighborDTSPTest 
+}; // class RandomizedDtspTest 
 
 // Test for out of range error
-TEST_F(NearestNeighborDTSPTest, InitialHeadingOutOfRangeError) {
+TEST_F(RandomizedDtspTest, InitialHeadingOutOfRangeError) {
     double x = -1.1; // initial heading
 
     EXPECT_THROW(m_alg.run(m_G, m_GA, x, m_turnRadius, m_Tour, m_Edges,
@@ -114,7 +114,7 @@ TEST_F(NearestNeighborDTSPTest, InitialHeadingOutOfRangeError) {
 }
 
 // Test for headings domain error
-TEST_F(NearestNeighborDTSPTest, HeadingsDomainError) {
+TEST_F(RandomizedDtspTest, HeadingsDomainError) {
     Graph G2;
     m_Headings.init(G2);
     EXPECT_THROW(m_alg.run(m_G, m_GA, m_initialHeading, m_turnRadius, m_Tour, m_Edges,
@@ -122,7 +122,7 @@ TEST_F(NearestNeighborDTSPTest, HeadingsDomainError) {
 }
 
 // Test for not enough nodes error
-TEST_F(NearestNeighborDTSPTest, NodesOutOfRangeError) {
+TEST_F(RandomizedDtspTest, NodesOutOfRangeError) {
     node u;
     // This doesn't work? 
     //std::cout << "Graph: " << &m_G << std::endl;
@@ -137,17 +137,17 @@ TEST_F(NearestNeighborDTSPTest, NodesOutOfRangeError) {
 }
 
 // Test for assertion fails with existing edges
-TEST_F(NearestNeighborDTSPTest, ExistingEdgesFails) {
+TEST_F(RandomizedDtspTest, ExistingEdgesFails) {
     // shouldn't need to add this to m_Edges
     edge e = m_G.newEdge(m_G.firstNode(), m_G.lastNode()); 
 
-    EXPECT_THROW(m_alg.run(m_G, m_GA, m_initialHeading, m_turnRadius, m_Tour, m_Edges,
-        m_Headings, m_cost), std::out_of_range);
+    EXPECT_DEATH(m_alg.run(m_G, m_GA, m_initialHeading, m_turnRadius, m_Tour, m_Edges,
+        m_Headings, m_cost), "Assertion failed: \\(G\\.numberOfEdges\\(\\) < 1\\).*");
 }
 
 // Test for working tour with no return
-TEST_F(NearestNeighborDTSPTest, TourWithNoReturn) {
-    double expectedCost = 19.001879768789465;
+TEST_F(RandomizedDtspTest, TourWithNoReturn) {
+    double expectedCost = 20.15;
     int expectedEdgesSize = GetSize() - 1;
     int expectedTourSize = GetSize();
 
@@ -155,12 +155,12 @@ TEST_F(NearestNeighborDTSPTest, TourWithNoReturn) {
         m_Headings, m_cost, false));
     EXPECT_EQ(expectedTourSize, m_Tour.size());
     EXPECT_EQ(expectedEdgesSize, m_Edges.size());
-    EXPECT_NEAR(expectedCost, m_cost, EPSILON_ERROR);
+    EXPECT_NEAR(expectedCost, m_cost, EPSILON_RANDOM_COST_ERROR);
 }
 
 // Test for working tour with return
-TEST_F(NearestNeighborDTSPTest, TourWithReturn) {
-    double expectedCost = 26.263188532775452;
+TEST_F(RandomizedDtspTest, TourWithReturn) {
+    double expectedCost = 29.85;
     int expectedEdgesSize = GetSize();
     int expectedTourSize = GetSize() + 1;
 
@@ -172,5 +172,5 @@ TEST_F(NearestNeighborDTSPTest, TourWithReturn) {
         m_Headings, m_cost, true));
     EXPECT_EQ(expectedTourSize, m_Tour.size());
     EXPECT_EQ(expectedEdgesSize, m_Edges.size());
-    EXPECT_NEAR(expectedCost, m_cost, EPSILON_ERROR);
+    EXPECT_NEAR(expectedCost, m_cost, EPSILON_RANDOM_COST_ERROR);
 }

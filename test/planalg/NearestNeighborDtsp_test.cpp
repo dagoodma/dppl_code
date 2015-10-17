@@ -12,7 +12,7 @@
 
 #include <dpp/basic/Logger.h>
 #include <dpp/basic/Util.h>
-#include <dpp/planalg/AlternatingDTSP.h>
+#include <dpp/planalg/NearestNeighborDtsp.h>
 
 using ogdf::node;
 using ogdf::edge;
@@ -43,9 +43,9 @@ const List<DPoint> nodes {
     {5.1*TURN_RADIUS, -6.6*TURN_RADIUS}
 };
 
-class AlternatingDTSPTest : public Test {
+class NearestNeighborDtspTest : public Test {
 public:
-    AlternatingDTSPTest()
+    NearestNeighborDtspTest()
         : m_G(),
           m_GA (m_G, 
             GraphAttributes::nodeGraphics | 
@@ -62,7 +62,7 @@ public:
           m_alg()
     { }
 
-    virtual ~AlternatingDTSPTest() { }
+    virtual ~NearestNeighborDtspTest() { }
 
     virtual void SetUp() {
         int m = nodes.size();
@@ -96,12 +96,12 @@ protected:
     double m_cost;
     const double m_turnRadius;
     double m_initialHeading;
-    dpp::AlternatingDTSP m_alg;
+    dpp::NearestNeighborDtsp m_alg;
 
-}; // class AlternatingDTSPTest 
+}; // class NearestNeighborDtspTest 
 
 // Test for out of range error
-TEST_F(AlternatingDTSPTest, InitialHeadingOutOfRangeError) {
+TEST_F(NearestNeighborDtspTest, InitialHeadingOutOfRangeError) {
     double x = -1.1; // initial heading
 
     EXPECT_THROW(m_alg.run(m_G, m_GA, x, m_turnRadius, m_Tour, m_Edges,
@@ -114,7 +114,7 @@ TEST_F(AlternatingDTSPTest, InitialHeadingOutOfRangeError) {
 }
 
 // Test for headings domain error
-TEST_F(AlternatingDTSPTest, HeadingsDomainError) {
+TEST_F(NearestNeighborDtspTest, HeadingsDomainError) {
     Graph G2;
     m_Headings.init(G2);
     EXPECT_THROW(m_alg.run(m_G, m_GA, m_initialHeading, m_turnRadius, m_Tour, m_Edges,
@@ -122,7 +122,7 @@ TEST_F(AlternatingDTSPTest, HeadingsDomainError) {
 }
 
 // Test for not enough nodes error
-TEST_F(AlternatingDTSPTest, NodesOutOfRangeError) {
+TEST_F(NearestNeighborDtspTest, NodesOutOfRangeError) {
     node u;
     // This doesn't work? 
     //std::cout << "Graph: " << &m_G << std::endl;
@@ -137,17 +137,17 @@ TEST_F(AlternatingDTSPTest, NodesOutOfRangeError) {
 }
 
 // Test for assertion fails with existing edges
-TEST_F(AlternatingDTSPTest, ExistingEdgesFails) {
+TEST_F(NearestNeighborDtspTest, ExistingEdgesFails) {
     // shouldn't need to add this to m_Edges
     edge e = m_G.newEdge(m_G.firstNode(), m_G.lastNode()); 
 
-    EXPECT_DEATH(m_alg.run(m_G, m_GA, m_initialHeading, m_turnRadius, m_Tour, m_Edges,
-        m_Headings, m_cost), "Assertion failed: \\(G\\.numberOfEdges\\(\\) < 1\\).*");
+    EXPECT_THROW(m_alg.run(m_G, m_GA, m_initialHeading, m_turnRadius, m_Tour, m_Edges,
+        m_Headings, m_cost), std::out_of_range);
 }
 
 // Test for working tour with no return
-TEST_F(AlternatingDTSPTest, TourWithNoReturn) {
-    double expectedCost = 19.447501521580278;
+TEST_F(NearestNeighborDtspTest, TourWithNoReturn) {
+    double expectedCost = 19.001879768789465;
     int expectedEdgesSize = GetSize() - 1;
     int expectedTourSize = GetSize();
 
@@ -159,8 +159,8 @@ TEST_F(AlternatingDTSPTest, TourWithNoReturn) {
 }
 
 // Test for working tour with return
-TEST_F(AlternatingDTSPTest, TourWithReturn) {
-    double expectedCost = 26.04750152158028;
+TEST_F(NearestNeighborDtspTest, TourWithReturn) {
+    double expectedCost = 26.263188532775452;
     int expectedEdgesSize = GetSize();
     int expectedTourSize = GetSize() + 1;
 

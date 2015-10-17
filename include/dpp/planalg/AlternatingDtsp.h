@@ -7,15 +7,15 @@
 
 namespace dpp {
 /*
- * Alternating algorithm for the DTSP.
+ * Alternating algorithm for the Dtsp.
  */
-class AlternatingDTSP : public AlgorithmDTSP {
+class AlternatingDtsp : public AlgorithmDtsp {
 public:
-    AlternatingDTSP()
-        : AlgorithmDTSP(std::string("Alternating"))
+    AlternatingDtsp()
+        : AlgorithmDtsp(std::string("Alternating"))
     { }
 
-    ~AlternatingDTSP()
+    ~AlternatingDtsp()
     { }
 
     int run(Graph &G, GraphAttributes &GA, double x, double r, List<node> &Tour,

@@ -6,14 +6,8 @@
  * Redistribution and use of this file is allowed according to the terms of the MIT license.
  * For details see the LICENSE file distributed with DubinsPathPlanner.
  */
-#include <ogdf/fileformats/GraphIO.h>
-#include <ogdf/basic/EdgeArray.h>
+#include <dpp/basic/FileIO.h>
 
-using ogdf::EdgeArray;
-
-#include <dpp/basic/basic.h>
-#include <dpp/basic/Util.h>
-#include <dpp/planner/PathPlanner.h>
 #include <dpp/planner/DubinsVehiclePathPlanner.h>
 
 namespace dpp {
@@ -22,7 +16,7 @@ namespace dpp {
  * Load graph from GML files.
  */
 void DubinsVehiclePathPlanner::addWaypoints(std::string gmlFilename) {
-    DPP_ASSERT(ogdf::GraphIO::readGML(m_GA, m_G, gmlFilename));
+    DPP_ASSERT(readGraphFromGmlFile(gmlFilename, m_G, m_GA) == SUCCESS);
     m_Headings.init(m_G);
     Logger::logDebug(DPP_LOGGER_VERBOSE_1) << "Read " << gmlFilename << " with " << waypointCount()
         << " nodes." << std::endl;
@@ -56,11 +50,12 @@ bool DubinsVehiclePathPlanner::solve(void) {
     Logger::logInfo(DPP_LOGGER_VERBOSE_1) << "Solving " << waypointCount() << " node problem with "
         << m_algorithm->name() << " " << m_algorithm->typeText() << " algorithm." << std::endl;
     try {
-        AlgorithmDTSP *alg = dynamic_cast<AlgorithmDTSP*>(m_algorithm.get());
-        // TODO add checking
-        alg->run(m_G, m_GA, m_initialHeading, m_turnRadius, m_Tour,
-            m_Edges, m_Headings, m_cost, m_returnToInitial);
-        m_haveSolution = true;
+        AlgorithmDtsp *alg = dynamic_cast<AlgorithmDtsp*>(m_algorithm.get());
+       
+        if (alg->run(m_G, m_GA, m_initialHeading, m_turnRadius, m_Tour,
+            m_Edges, m_Headings, m_cost, m_returnToInitial) == SUCCESS) {
+            m_haveSolution = true;
+        }
     } catch(std::exception &e) {
         Logger::logError() << "An exception occured: " << e.what() << std::endl;
         m_haveSolution = false;
@@ -69,66 +64,21 @@ bool DubinsVehiclePathPlanner::solve(void) {
     return m_haveSolution;
 }
 
-/**
- * Copy the solution (Graph, Tour, Edges, and Headings) into the ones given.
- * @note Existing nodes and edges are cleared.
- */
-void DubinsVehiclePathPlanner::copySolution(ogdf::Graph &G, ogdf::GraphAttributes &GA,
-        ogdf::List<ogdf::node> &Tour, ogdf::List<ogdf::edge> &Edges,
-        NodeArray<double> &Headings, double &cost) {
-    DPP_ASSERT(m_haveSolution);
-
-    // Copy the graph and attributes
-    NodeArray<node> nodeCopyTable(m_G);
-    EdgeArray<edge> edgeCopyTable(m_G);
-    int n = copyGraph(m_G, m_GA, G, GA, nodeCopyTable, edgeCopyTable);
-
-    // Copy the tour
-    ogdf::ListIterator<ogdf::node> tourIter;
-    for ( tourIter = m_Tour.begin(); tourIter != m_Tour.end(); tourIter++ ) {
-        node u = *tourIter;
-        node ucopy = nodeCopyTable(u);
-        Tour.pushBack(ucopy);
-    }
-
-    // Copy the edge list
-    ogdf::ListIterator<ogdf::edge> edgeIter;
-    for ( edgeIter = m_Edges.begin(); edgeIter != m_Edges.end(); edgeIter++ ) {
-        edge e = *edgeIter;
-        edge ecopy = edgeCopyTable(e);
-        Edges.pushBack(ecopy);
-    }
-
-    // Copy the headings
-    Headings.init(G);
-    node u;
-    forall_nodes(u,m_G) {
-        node ucopy = nodeCopyTable(u);
-        Headings(ucopy) = m_Headings(u);
-    }
-
-    // Copy the cost
-    cost = m_cost;
-
-    Logger::logDebug(DPP_LOGGER_VERBOSE_1) << "Copied " << n << " nodes from graph " << &m_G << " with " << waypointCount()
-        << " nodes into graph " << &G << std::endl;
-}
-
 /*
  * Sets the DTSP algorithm for solving.
  */
-void DubinsVehiclePathPlanner::algorithm(PlanningAlgorithm algId) {
+void DubinsVehiclePathPlanner::algorithm(DtspPlanningAlgorithm algId) {
     switch (algId) {
         case NEAREST_NEIGHBOR:
-            m_algorithm.reset(new NearestNeighborDTSP());
+            m_algorithm.reset(new NearestNeighborDtsp());
             Logger::logDebug() << "Set DTSP algorithm to NEAREST_NEIGHBOR." << std::endl;
             break;
         case ALTERNATING:
-            m_algorithm.reset(new AlternatingDTSP());
+            m_algorithm.reset(new AlternatingDtsp());
             Logger::logDebug() << "Set DTSP algorithm to ALTERNATING." << std::endl;
             break;
         case RANDOMIZED:
-            m_algorithm.reset(new RandomizedDTSP());
+            m_algorithm.reset(new RandomizedDtsp());
             Logger::logDebug() << "Set DTSP algorithm to RANDOMIZED." << std::endl;
             break;
         default:

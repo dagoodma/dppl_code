@@ -7,15 +7,15 @@
 
 namespace dpp {
 /*
- * Nearest neighbor algorithm for the DTSP.
+ * Nearest neighbor algorithm for the Dtsp.
  */
-class NearestNeighborDTSP : public AlgorithmDTSP {
+class NearestNeighborDtsp : public AlgorithmDtsp {
 public:
-    NearestNeighborDTSP()
-        : AlgorithmDTSP(std::string("NearestNeighbor"))
+    NearestNeighborDtsp()
+        : AlgorithmDtsp(std::string("NearestNeighbor"))
     { }
 
-    ~NearestNeighborDTSP()
+    ~NearestNeighborDtsp()
     { }
 
     int run(Graph &G, GraphAttributes &GA, double x, double r, List<node> &Tour,

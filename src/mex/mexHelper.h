@@ -17,6 +17,8 @@ using ogdf::GraphAttributes;
 using ogdf::List;
 using ogdf::ListIterator;
 using ogdf::NodeArray;
+using ogdf::DPoint;
+using ogdf::DPolygon;
 
 #define MEX_MODULE_NAME "DubinsPathPlanner" 
 
@@ -26,6 +28,10 @@ using ogdf::NodeArray;
 
 
 int unpackNodes(Graph &G, GraphAttributes &GA, double *pV, int n);
+
+int unpackPolygon(DPolygon &polygon, double *pP, int n);
+
+int packNodes(Graph &G, GraphAttributes &GA, double *pV);
 
 int packEdges(Graph &G, GraphAttributes &GA, List<edge> &Edges, double *pE);
  

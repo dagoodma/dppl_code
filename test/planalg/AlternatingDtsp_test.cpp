@@ -11,8 +11,8 @@
 #include <gtest/gtest.h>
 
 #include <dpp/basic/Logger.h>
-#include <dpp/planalg/RandomizedDTSP.h>
 #include <dpp/basic/Util.h>
+#include <dpp/planalg/AlternatingDtsp.h>
 
 using ogdf::node;
 using ogdf::edge;
@@ -25,7 +25,7 @@ using ogdf::ListConstIterator;
 using ogdf::NodeArray;
 
 #define TURN_RADIUS     1.0
-#define EPSILON_RANDOM_COST_ERROR (5.0*TURN_RADIUS) // stddev of solution cost
+#define EPSILON_ERROR   0.0001 // error margin in length calculation
 
 
 // Value-parameterized tests for dubinsTourCost()
@@ -43,9 +43,9 @@ const List<DPoint> nodes {
     {5.1*TURN_RADIUS, -6.6*TURN_RADIUS}
 };
 
-class RandomizedDTSPTest : public Test {
+class AlternatingDtspTest : public Test {
 public:
-    RandomizedDTSPTest()
+    AlternatingDtspTest()
         : m_G(),
           m_GA (m_G, 
             GraphAttributes::nodeGraphics | 
@@ -62,7 +62,7 @@ public:
           m_alg()
     { }
 
-    virtual ~RandomizedDTSPTest() { }
+    virtual ~AlternatingDtspTest() { }
 
     virtual void SetUp() {
         int m = nodes.size();
@@ -96,12 +96,12 @@ protected:
     double m_cost;
     const double m_turnRadius;
     double m_initialHeading;
-    dpp::RandomizedDTSP m_alg;
+    dpp::AlternatingDtsp m_alg;
 
-}; // class RandomizedDTSPTest 
+}; // class AlternatingDtspTest 
 
 // Test for out of range error
-TEST_F(RandomizedDTSPTest, InitialHeadingOutOfRangeError) {
+TEST_F(AlternatingDtspTest, InitialHeadingOutOfRangeError) {
     double x = -1.1; // initial heading
 
     EXPECT_THROW(m_alg.run(m_G, m_GA, x, m_turnRadius, m_Tour, m_Edges,
@@ -114,7 +114,7 @@ TEST_F(RandomizedDTSPTest, InitialHeadingOutOfRangeError) {
 }
 
 // Test for headings domain error
-TEST_F(RandomizedDTSPTest, HeadingsDomainError) {
+TEST_F(AlternatingDtspTest, HeadingsDomainError) {
     Graph G2;
     m_Headings.init(G2);
     EXPECT_THROW(m_alg.run(m_G, m_GA, m_initialHeading, m_turnRadius, m_Tour, m_Edges,
@@ -122,7 +122,7 @@ TEST_F(RandomizedDTSPTest, HeadingsDomainError) {
 }
 
 // Test for not enough nodes error
-TEST_F(RandomizedDTSPTest, NodesOutOfRangeError) {
+TEST_F(AlternatingDtspTest, NodesOutOfRangeError) {
     node u;
     // This doesn't work? 
     //std::cout << "Graph: " << &m_G << std::endl;
@@ -137,7 +137,7 @@ TEST_F(RandomizedDTSPTest, NodesOutOfRangeError) {
 }
 
 // Test for assertion fails with existing edges
-TEST_F(RandomizedDTSPTest, ExistingEdgesFails) {
+TEST_F(AlternatingDtspTest, ExistingEdgesFails) {
     // shouldn't need to add this to m_Edges
     edge e = m_G.newEdge(m_G.firstNode(), m_G.lastNode()); 
 
@@ -146,8 +146,8 @@ TEST_F(RandomizedDTSPTest, ExistingEdgesFails) {
 }
 
 // Test for working tour with no return
-TEST_F(RandomizedDTSPTest, TourWithNoReturn) {
-    double expectedCost = 20.15;
+TEST_F(AlternatingDtspTest, TourWithNoReturn) {
+    double expectedCost = 19.447501521580278;
     int expectedEdgesSize = GetSize() - 1;
     int expectedTourSize = GetSize();
 
@@ -155,12 +155,12 @@ TEST_F(RandomizedDTSPTest, TourWithNoReturn) {
         m_Headings, m_cost, false));
     EXPECT_EQ(expectedTourSize, m_Tour.size());
     EXPECT_EQ(expectedEdgesSize, m_Edges.size());
-    EXPECT_NEAR(expectedCost, m_cost, EPSILON_RANDOM_COST_ERROR);
+    EXPECT_NEAR(expectedCost, m_cost, EPSILON_ERROR);
 }
 
 // Test for working tour with return
-TEST_F(RandomizedDTSPTest, TourWithReturn) {
-    double expectedCost = 29.85;
+TEST_F(AlternatingDtspTest, TourWithReturn) {
+    double expectedCost = 26.04750152158028;
     int expectedEdgesSize = GetSize();
     int expectedTourSize = GetSize() + 1;
 
@@ -172,5 +172,5 @@ TEST_F(RandomizedDTSPTest, TourWithReturn) {
         m_Headings, m_cost, true));
     EXPECT_EQ(expectedTourSize, m_Tour.size());
     EXPECT_EQ(expectedEdgesSize, m_Edges.size());
-    EXPECT_NEAR(expectedCost, m_cost, EPSILON_RANDOM_COST_ERROR);
+    EXPECT_NEAR(expectedCost, m_cost, EPSILON_ERROR);
 }

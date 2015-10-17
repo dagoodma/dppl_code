@@ -1,5 +1,5 @@
 /*
- * Implementation of DPP::RandomizedDTSP class for solving DTSP problems
+ * Implementation of DPP::RandomizedDtsp class for solving Dtsp problems
  * with the randomized heading algorithm.
  *
  * Derived from the Randomized Algorithm (Le Ny et al. 2005 and 2011).
@@ -19,8 +19,8 @@
 #include <dpp/basic/basic.h>
 #include <dpp/basic/Logger.h>
 #include <dpp/basic/Path.h>
-#include <dpp/planalg/RandomizedDTSP.h>
-#include <dpp/basic/TSPIO.h>
+#include <dpp/planalg/RandomizedDtsp.h>
+#include <dpp/basic/FileIO.h>
 
 #define ALGORITHM_ITERATIONS            10 // number of iterations for best-of
 
@@ -68,7 +68,7 @@ void randomizeHeadings(Graph &G, GraphAttributes &GA, NodeArray<double> &Heading
 }
 
 /**
- * Solves the DTSP with the randomized algorithm. The tour, headings, and total
+ * Solves the Dtsp with the randomized algorithm. The tour, headings, and total
  * cost are saved into their respective parameters.
  * @param G         a graph of the problem
  * @param GA        attributes of graph
@@ -80,7 +80,7 @@ void randomizeHeadings(Graph &G, GraphAttributes &GA, NodeArray<double> &Heading
  * @param cost      holds the total cost result
  * @return An exit code (0==SUCCESS)
  */
-int RandomizedDTSP::run(Graph &G, GraphAttributes &GA, double x, double r,
+int RandomizedDtsp::run(Graph &G, GraphAttributes &GA, double x, double r,
     List<node> &Tour, List<edge> &Edges, NodeArray<double> &Headings, double &cost,
     bool returnToInitial) {
     // Check arguments
@@ -123,8 +123,8 @@ int RandomizedDTSP::run(Graph &G, GraphAttributes &GA, double x, double r,
         buildDubinsAdjacencyMatrix(G, GA, A, Headings, r);
 
 
-        if (writePARFile(parFilename,tspFilename, tourFilename) != SUCCESS
-            || writeATSPFile(tspFilename, problemName, problemComment, G, A) != SUCCESS) {
+        if (writeParFile(parFilename,tspFilename, tourFilename) != SUCCESS
+            || writeAtspFile(tspFilename, problemName, problemComment, G, A) != SUCCESS) {
             throw std::runtime_error("Failed creating TSP files.");
         }
 
@@ -148,7 +148,7 @@ int RandomizedDTSP::run(Graph &G, GraphAttributes &GA, double x, double r,
             << " ATSP tour " << i << " in " << tourFilename << "." << std::endl;
 
         // Read LKH solution from tour file
-        if (readTSPTourFile(tourFilename, G, GA, Tour) != SUCCESS) {
+        if (readTspTourFile(tourFilename, G, GA, Tour) != SUCCESS) {
             std::runtime_error("Could not read solution from LKH tour file!");
         }
 
@@ -194,6 +194,6 @@ int RandomizedDTSP::run(Graph &G, GraphAttributes &GA, double x, double r,
     }
 
     return SUCCESS;
-} // RandomizedDTSP::run()
+} // RandomizedDtsp::run()
 
 } // namespace dpp

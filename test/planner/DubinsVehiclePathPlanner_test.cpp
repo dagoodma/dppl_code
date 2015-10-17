@@ -1,4 +1,6 @@
 /*
+ * Unit test for dpp/planner/DubinsVehiclePathPlanner.
+ *
  * Copyright (C) 2014-2015 DubinsPathPlanner.
  * Created by David Goodman <dagoodma@gmail.com>
  * Redistribution and use of this file is allowed according to the terms of the MIT license.
@@ -23,7 +25,7 @@ using ogdf::ListConstIterator;
 #define INPUT_FILEPATH  "../data/triangle-8wp.gml"
 #define INITIAL_HEADING 0.0
 
-typedef dpp::DubinsVehiclePathPlanner::PlanningAlgorithm PlanningAlgorithm;
+typedef dpp::DubinsVehiclePathPlanner::DtspPlanningAlgorithm DtspPlanningAlgorithm;
 
  // Test dies without solution
 TEST(DubinsVehiclePathPlannerDeathTest, DeathWithoutSolution) {
@@ -116,24 +118,24 @@ TEST_F(DubinsVehiclePathPlannerFeatureTest, SetUpWorked) {
 }
 
 // Test for setting planning algorithm
-TEST_F(DubinsVehiclePathPlannerFeatureTest, SettingPlanningAlgorithm) {
+TEST_F(DubinsVehiclePathPlannerFeatureTest, SettingDtspPlanningAlgorithm) {
     // Test for alternating algorithm
-    PlanningAlgorithm planAlg = PlanningAlgorithm::ALTERNATING;
+    DtspPlanningAlgorithm planAlg = DtspPlanningAlgorithm::ALTERNATING;
     m_planner.algorithm(planAlg);
-    EXPECT_STREQ("Alternating", m_planner.algorithm().c_str());
+    EXPECT_STREQ("Alternating", m_planner.algorithmName().c_str());
 
     // Test for nearest neighbor algorithm
-    planAlg = PlanningAlgorithm::NEAREST_NEIGHBOR;
+    planAlg = DtspPlanningAlgorithm::NEAREST_NEIGHBOR;
     m_planner.algorithm(planAlg);
-    EXPECT_STREQ("NearestNeighbor", m_planner.algorithm().c_str());
+    EXPECT_STREQ("NearestNeighbor", m_planner.algorithmName().c_str());
 
     // Test for randomized algorithm
-    planAlg = PlanningAlgorithm::RANDOMIZED;
+    planAlg = DtspPlanningAlgorithm::RANDOMIZED;
     m_planner.algorithm(planAlg);
-    EXPECT_STREQ("Randomized", m_planner.algorithm().c_str());
+    EXPECT_STREQ("Randomized", m_planner.algorithmName().c_str());
 
     // Test for death with unknown algorithm
-    planAlg = static_cast<PlanningAlgorithm>(
+    planAlg = static_cast<DtspPlanningAlgorithm>(
         std::numeric_limits<int>::max());
     EXPECT_DEATH(m_planner.algorithm(planAlg), "Assertion failed: \\(0 && \"Unknown planning algorithm\"\\).*");
 }

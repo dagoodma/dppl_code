@@ -6,15 +6,15 @@
 namespace dpp {
 
 /*
- * Randomized heading algorithm for the DTSP.
+ * Randomized heading algorithm for the Dtsp.
  */
-class RandomizedDTSP : public AlgorithmDTSP {
+class RandomizedDtsp : public AlgorithmDtsp {
 public:
-    RandomizedDTSP()
-        : AlgorithmDTSP(std::string("Randomized"))
+    RandomizedDtsp()
+        : AlgorithmDtsp(std::string("Randomized"))
     { }
 
-    ~RandomizedDTSP()
+    ~RandomizedDtsp()
     { }
 
     int run(Graph &G, GraphAttributes &GA, double x, double r, List<node> &Tour,
@@ -24,4 +24,4 @@ public:
 };
 
 } // namespace dpp
-#endif // _DPP_ALGORITHM_RANDOMIZED_DTSP_H_
+#endif // _DPP_RANDOMIZED_DTSP_H_

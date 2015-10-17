@@ -1,5 +1,5 @@
 /*
- * MEX interface for the solveDTSP binary.
+ * MEX interface for the solveDtsp binary.
  *
  * Copyright (C) 2014-2015 DubinsPathPlanner.
  * Created by David Goodman <dagoodma@gmail.com>
@@ -8,18 +8,19 @@
  */
 #include <string>
 
+#include <dpp/basic/basic.h>
 #include <dpp/basic/Logger.h>
 #include <dpp/basic/Util.h>
 
 #include "mexHelper.h"
-#include "solveDTSP.h"
+#include "solveDtsp.h"
 
-#define LOG_FILENAME "solveDTSP.log"
+#define LOG_FILENAME "solveDtsp.log"
 
 /*
  * MEX gateway function. The MEX file synopsis is as follows:
  *
- *      solveDTSP V x r [return] [algorithm]
+ *      solveDtsp V x r [return] [algorithm]
  *
  * Parameters:
  *      V   Vertices, n-by-2 matrix of node positions
@@ -28,6 +29,10 @@
  *      [return]      Optional argument whether to return to the starting node
  *      [algorithm]   Optional algorithm name. Options are "alternating",
  *                    "nearest", and "randomized".
+ * Returns:
+ *      E       Edges of tour, m-by-3 matrix with rows as: srcNodeId, targNodeId, cost
+ *      X       Headings of tour, n-by-1 vector of node headings
+ *      cost    Total cost of tour
  */
 void mexFunction( int nlhs, mxArray *plhs[],
                   int nrhs, const mxArray *prhs[])
@@ -36,7 +41,7 @@ void mexFunction( int nlhs, mxArray *plhs[],
     #ifdef MEX_DEBUG
     dpp::Logger *log = dpp::Logger::Instance();
     log->level(dpp::Logger::Level::LL_DEBUG);
-    log->verbose(3);
+    log->verbose(2);
     dpp::Logger::initializeLogger(LOG_FILENAME);
     #endif
 
@@ -111,15 +116,7 @@ void mexFunction( int nlhs, mxArray *plhs[],
 
     // Construct the graph
     Graph G;
-    GraphAttributes GA(G,
-      GraphAttributes::nodeGraphics |
-      GraphAttributes::edgeGraphics |
-      GraphAttributes::nodeLabel |
-      GraphAttributes::edgeStyle |
-      GraphAttributes::edgeDoubleWeight |
-      GraphAttributes::nodeStyle |
-      GraphAttributes::nodeTemplate |
-      GraphAttributes::nodeId); 
+    GraphAttributes GA(G, DPP_GRAPH_ATTRIBUTES); 
     unpackNodes(G, GA, V, n);
     node u;
 
@@ -134,15 +131,15 @@ void mexFunction( int nlhs, mxArray *plhs[],
     #endif
 
     // Set algorithm
-    PlanningAlgorithm alg;
+    dpp::DtspPlanningAlgorithm alg;
     if (algorithmName.compare("alternating") == 0) {
-        alg = PlanningAlgorithm::ALTERNATING;
+        alg = dpp::DtspPlanningAlgorithm::ALTERNATING;
     }
     else if (algorithmName.compare("nearest") == 0) {
-        alg = PlanningAlgorithm::NEAREST_NEIGHBOR;
+        alg = dpp::DtspPlanningAlgorithm::NEAREST_NEIGHBOR;
     }
     else if (algorithmName.compare("randomized") == 0) {
-        alg = PlanningAlgorithm::RANDOMIZED;
+        alg = dpp::DtspPlanningAlgorithm::RANDOMIZED;
     }
     else {
         mexErrMsgIdAndTxt(MEX_MODULE_NAME ":algorithm:unknownName",
@@ -153,7 +150,7 @@ void mexFunction( int nlhs, mxArray *plhs[],
     List<node> Tour;
     List<edge> Edges;
     NodeArray<double> Headings(G,0.0);
-    int result = solveDTSP(G, GA, x, r, Tour, Edges, Headings, cost, returnToInitial,
+    int result = solveDtsp(G, GA, x, r, Tour, Edges, Headings, cost, returnToInitial,
         alg);
 
     if (result != SUCCESS) {

@@ -47,39 +47,39 @@ add_executable(Path_test basic/Path_test.cpp ../src/dpp/basic/Path.cpp)
 target_link_libraries(Path_test gmock_main OGDF COIN DPP DUBINSCURVES)
 add_test(BasicTests Path_test)
 
-# dpp/planalg/RandomizedDTSP
-add_executable(RandomizedDTSP_test planalg/RandomizedDTSP_test.cpp
-    ../src/dpp/planalg/RandomizedDTSP.cpp
+# dpp/planalg/RandomizedDtsp
+add_executable(RandomizedDtsp_test planalg/RandomizedDtsp_test.cpp
+    ../src/dpp/planalg/RandomizedDtsp.cpp
     ../src/dpp/planalg/Algorithm.cpp
     ../src/dpp/basic/Path.cpp
     ../src/dpp/basic/Logger.cpp)
-target_link_libraries(RandomizedDTSP_test gmock_main OGDF COIN DPP)
-add_test(PlanalgTests RandomizedDTSP_test)
+target_link_libraries(RandomizedDtsp_test gmock_main OGDF COIN DPP)
+add_test(PlanalgTests RandomizedDtsp_test)
 
-# dpp/planalg/AlternatingDTSP
-add_executable(AlternatingDTSP_test planalg/AlternatingDTSP_test.cpp
-    ../src/dpp/planalg/AlternatingDTSP.cpp
+# dpp/planalg/AlternatingDtsp
+add_executable(AlternatingDtsp_test planalg/AlternatingDtsp_test.cpp
+    ../src/dpp/planalg/AlternatingDtsp.cpp
     ../src/dpp/planalg/Algorithm.cpp
     ../src/dpp/basic/Path.cpp
     ../src/dpp/basic/Logger.cpp)
-target_link_libraries(AlternatingDTSP_test gmock_main OGDF COIN DPP)
-add_test(PlanalgTests AlternatingDTSP_test)
+target_link_libraries(AlternatingDtsp_test gmock_main OGDF COIN DPP)
+add_test(PlanalgTests AlternatingDtsp_test)
 
-# dpp/planalg/NearestNeighborDTSP
-add_executable(NearestNeighborDTSP_test planalg/NearestNeighborDTSP_test.cpp
-    ../src/dpp/planalg/NearestNeighborDTSP.cpp
+# dpp/planalg/NearestNeighborDtsp
+add_executable(NearestNeighborDtsp_test planalg/NearestNeighborDtsp_test.cpp
+    ../src/dpp/planalg/NearestNeighborDtsp.cpp
     ../src/dpp/planalg/Algorithm.cpp
     ../src/dpp/basic/Path.cpp
     ../src/dpp/basic/Logger.cpp)
-target_link_libraries(NearestNeighborDTSP_test gmock_main OGDF COIN DPP)
-add_test(PlanalgTests NearestNeighborDTSP_test)
+target_link_libraries(NearestNeighborDtsp_test gmock_main OGDF COIN DPP)
+add_test(PlanalgTests NearestNeighborDtsp_test)
 
 # dpp/planner/DubinsVehiclePathPlanner
 add_executable(DubinsVehiclePathPlanner_test planner/DubinsVehiclePathPlanner_test.cpp
     ../src/dpp/planner/DubinsVehiclePathPlanner.cpp
-    ../src/dpp/planalg/AlternatingDTSP.cpp
-    ../src/dpp/planalg/NearestNeighborDTSP.cpp
-    ../src/dpp/planalg/RandomizedDTSP.cpp
+    ../src/dpp/planalg/AlternatingDtsp.cpp
+    ../src/dpp/planalg/NearestNeighborDtsp.cpp
+    ../src/dpp/planalg/RandomizedDtsp.cpp
     ../src/dpp/planalg/Algorithm.cpp
     ../src/dpp/basic/Path.cpp
     ../src/dpp/basic/Logger.cpp)

@@ -60,13 +60,17 @@ public:
         return m_heading;
     }
 
+    ogdf::DPoint& position(void) {
+        return m_position;
+    }
+
     // Modifiers
-    void setPosition(double x, double y) {
+    void position(double x, double y) {
         m_position.m_x = x;
         m_position.m_y = y;
     }
 
-    void setHeading(double x) {
+    void heading(double x) {
         DPP_ASSERT(x >= 0 && x < 2.0*M_PI);
         m_heading = x;
     }
