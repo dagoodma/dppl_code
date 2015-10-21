@@ -7,19 +7,106 @@
  * Redistribution and use of this file is allowed according to the terms of the MIT license.
  * For details see the LICENSE file distributed with DubinsPathPlanner.
  */
-#include "Path.h"
-#include "Util.h"
-#include "VehicleConfiguration.h"
-#include "DubinsVehiclePathPlanner.h"
+#include <dpp/planner/DubinsSensorPathPlanner.h>
+#include <dpp/basic/FileIO.h>
 
-namespace DPP {
+namespace dpp {
 
-class DubinsSensorPathPlanner : public PathPlanner {
+void DubinsSensorPathPlanner::polygon(std::string gmlFilename) {
+    DPP_ASSERT(readPolygonFromGmlFile(gmlFilename, m_polygon) == SUCCESS);
 
-    void polygon(DPolygon polygon);
-    void polygon(List<DPoint> points);
-    DPolygon polygon(void) {}
+    polygon(m_polygon); // for logger message
+}
 
-};
+void DubinsSensorPathPlanner::polygon(DPolygon polygon) {
+    m_polygon = polygon;
 
-} // namespace DPP 
+    Logger::logDebug(DPP_LOGGER_VERBOSE_1) << "Set polygon to " << &polygon <<
+        " with n=" << polygon.size() << " points." << std::endl;
+}
+
+void DubinsSensorPathPlanner::polygon(List<DPoint> points) {
+    Logger::logWarn() << "polygon(List<DPoint>) not implemented!" << std::endl;
+}
+
+
+/**
+ * Sets the CPP algorithm for solving.
+ */
+void DubinsSensorPathPlanner::algorithm(CppPlanningAlgorithm algId) {
+    switch (algId) {
+        case FIELD_TRACKS:
+            m_algorithm.reset(new FieldTracksCpp());
+            Logger::logDebug() << "Set CPP algorithm to FIELD_TRACKS." << std::endl;
+            break;
+        default:
+            DPP_ASSERT(0 && "Unknown planning algorithm");
+            Logger::logError() << "Unknown planning algorithm: " << algId << std::endl;
+            return;
+    } // switch (algId)
+}
+
+/**
+ * Find the DTSP solution to the CPP problem.
+ */
+bool DubinsSensorPathPlanner::solveAsDtsp(DtspPlanningAlgorithm algId) {
+    DPP_ASSERT(m_polygon.size() >= 3);
+    m_haveSolution = false;
+
+    try {
+        // Create a DTSP path planner and copy settings
+        DubinsVehiclePathPlanner p(m_turnRadius);
+        p.algorithm(algId);
+        p.initialHeading(m_initialHeading);
+        p.turnRadius(m_turnRadius);
+        p.returnToInitial(m_returnToInitial);
+
+        Logger::logInfo(DPP_LOGGER_VERBOSE_1) << "Solving coverage problem with "
+        << p.algorithmName() << " DTSP algorithm." << std::endl;
+        
+        // Clear and add origin to graph
+        m_G.clear();
+        ogdf::node nodeStart = m_G.newNode();
+        m_GA.x(nodeStart) = m_initialConfig.x();
+        m_GA.y(nodeStart) = m_initialConfig.y();
+        m_GA.idNode(nodeStart) = 1;
+
+        // Grid polygon by sensor width and build graph with centroids as nodes
+        int n = addNodesFromPolygonGrid(m_G, m_GA, m_polygon, m_sensorWidth);
+        Logger::logDebug(DPP_LOGGER_VERBOSE_1) << "Added " << n << " nodes "
+            << "to the Graph." << std::endl;
+
+        // Solve as DTSP problem
+        p.addWaypoints(m_G, m_GA);
+        if (p.solve() == true) {
+            m_haveSolution = true;
+            p.copySolution(m_G, m_GA, m_Tour, m_Edges, m_Headings, m_cost);
+        }
+    } catch(std::exception &e) {
+        Logger::logError() << "An exception occured: " << e.what() << std::endl;
+        m_haveSolution = false;
+    }
+    return m_haveSolution;
+}
+
+bool DubinsSensorPathPlanner::solve(void) {
+    DPP_ASSERT(m_polygon.size() >= 3);
+    m_haveSolution = false;
+
+    Logger::logInfo(DPP_LOGGER_VERBOSE_1) << "Solving coverage problem with "
+        << m_algorithm->name() << " " << m_algorithm->typeText() << " algorithm." << std::endl;
+    try {
+        AlgorithmCpp *alg = dynamic_cast<AlgorithmCpp*>(m_algorithm.get());
+        if (alg->run() == SUCCESS) {
+            //m_haveSolution = true;
+            m_haveSolution = false; // not implemented
+        }
+    } catch(std::exception &e) {
+        Logger::logError() << "An exception occured: " << e.what() << std::endl;
+        m_haveSolution = false;
+    }
+    return m_haveSolution;
+}
+
+
+} // namespace dpp 

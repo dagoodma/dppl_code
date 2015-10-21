@@ -1,5 +1,5 @@
 /*
- * Implementation of DPP::NearestNeighbor class for solving DTSP problems
+ * Implementation of DPP::NearestNeighbor class for solving Dtsp problems
  * with the nearest neighbor algorithm.
  *
  * Copyright (C) 2014-2015 DubinsPathPlanner.
@@ -13,7 +13,7 @@
 #include <dpp/basic/VehicleConfiguration.h>
 #include <dpp/basic/Logger.h>
 #include <dpp/basic/Path.h>
-#include <dpp/planalg/NearestNeighborDTSP.h>
+#include <dpp/planalg/NearestNeighborDtsp.h>
 
 using ogdf::GraphCopy;
 
@@ -30,7 +30,7 @@ double findNearestNode(GraphCopy &GC, GraphAttributes &GA, VehicleConfiguration 
 
         VehicleConfiguration Ci(GA.x(i), GA.y(i));
         //double dist = C.euclideanDistance(Ci);
-        Ci.setHeading(headingBetween(C.asVector(), Ci.asVector()) );
+        Ci.heading(headingBetween(C.asVector(), Ci.asVector()) );
         double dist = dubinsPathLength(C, Ci, r);
         if (minDist < 0.0f || dist < minDist) {
             vC = iC;
@@ -42,7 +42,7 @@ double findNearestNode(GraphCopy &GC, GraphAttributes &GA, VehicleConfiguration 
 }
 
 /**
- * Solves the DTSP with the nearest neighbor algorithm. The tour, headings, and total
+ * Solves the Dtsp with the nearest neighbor algorithm. The tour, headings, and total
  * cost are saved into their respective parameters.
  * @param G         a graph of the problem
  * @param GA        attributes of graph
@@ -54,7 +54,7 @@ double findNearestNode(GraphCopy &GC, GraphAttributes &GA, VehicleConfiguration 
  * @param cost      holds the total cost result
  * @return An exit code (0==SUCCESS)
  */
-int NearestNeighborDTSP::run(Graph &G, GraphAttributes &GA, double x, double r,
+int NearestNeighborDtsp::run(Graph &G, GraphAttributes &GA, double x, double r,
     List<node> &Tour, List<edge> &Edges, NodeArray<double> &Headings, double &cost,
     bool returnToInitial) {
     // Check arguments
@@ -119,8 +119,8 @@ int NearestNeighborDTSP::run(Graph &G, GraphAttributes &GA, double x, double r,
         u = v;
 
         // Update our current position
-        C.setPosition(GA.x(v), GA.y(v));
-        C.setHeading(x_v);
+        C.position(GA.x(v), GA.y(v));
+        C.heading(x_v);
     }
 
     // Return to start configuration
@@ -145,6 +145,6 @@ int NearestNeighborDTSP::run(Graph &G, GraphAttributes &GA, double x, double r,
     Logger::logDebug(DPP_LOGGER_VERBOSE_1) << dpp::printEdges(G, GA, Edges);
 
     return SUCCESS;
-} // NearestNeighborDTSP::run()
+} // NearestNeighborDtsp::run()
 
 } // namespace dpp

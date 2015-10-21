@@ -18,14 +18,14 @@
 #define SUCCESS (0)
 
 #define DPP_GRAPH_ATTRIBUTES ( \
-            GraphAttributes::nodeGraphics | \
-            GraphAttributes::edgeGraphics | \
-            GraphAttributes::nodeLabel | \
-            GraphAttributes::edgeStyle | \
-            GraphAttributes::edgeDoubleWeight | \
-            GraphAttributes::nodeStyle | \
-            GraphAttributes::nodeTemplate | \
-            GraphAttributes::nodeId)
+            ogdf::GraphAttributes::nodeGraphics | \
+            ogdf::GraphAttributes::edgeGraphics | \
+            ogdf::GraphAttributes::nodeLabel | \
+            ogdf::GraphAttributes::edgeStyle | \
+            ogdf::GraphAttributes::edgeDoubleWeight | \
+            ogdf::GraphAttributes::nodeStyle | \
+            ogdf::GraphAttributes::nodeTemplate | \
+            ogdf::GraphAttributes::nodeId)
 
 namespace dpp {
 

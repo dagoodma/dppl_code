@@ -11,32 +11,32 @@
 #include <cxxopts.h>
 #include <stacktrace.h>
 
-#include <solveDTSP.h>
+#include <solveDtsp.h>
 
 #include <dpp/basic/Logger.h>
 #include <dpp/basic/Util.h>
 
 /** 
- * Solve a DTSP scenario. This is an entry point interface.
- * @param G     To hold the graph of the solution.
- * @param GA    Attributes of solution graph.
+ * Solve a Dtsp scenario. This is an entry point interface.
+ * @param G     Graph containing points to cover.
+ * @param GA    Attributes of the graph.
  * @param x     Initial heading.
  * @param r     Vehicle turn radius.
  * @param Tour  List of nodes to hold result
  * @param Edges List of edges to hold result
  * @param Headings Node array of headings to hold result
  * @param returnToInitial Return to the initial configuration at the end of tour.
- * @param alg   Algorithm for solving DTSP. See dpp::DubinsVehiclePathPlanner::PlanningAlgorithm
+ * @param algId Algorithm for solving Dtsp. See dpp::DubinsVehiclePathPlanner::DtspPlanningAlgorithm
  * @return Success or failure
  */
- int solveDTSP(ogdf::Graph &G, ogdf::GraphAttributes &GA, double x, double r,
+ int solveDtsp(ogdf::Graph &G, ogdf::GraphAttributes &GA, double x, double r,
     ogdf::List<ogdf::node> &Tour, ogdf::List<ogdf::edge> &Edges, NodeArray<double> &Headings,
-    double &cost, bool returnToInitial, PlanningAlgorithm alg) {
+    double &cost, bool returnToInitial, dpp::DtspPlanningAlgorithm algId) {
 
     dpp::DubinsVehiclePathPlanner p;
 
     // Waypoints from given Graph
-    p.algorithm(alg);
+    p.algorithm(algId);
     p.addWaypoints(G, GA);
 
     // Setup path planner
@@ -49,15 +49,7 @@
 
     // Get the results
     p.copySolution(G, GA, Tour, Edges, Headings, cost);
-    //G = *(p.graphPtr());
-    //GA = p.graphAttributes();
-    //Edges = p.edges();
-    //Headings = p.headings();
-    //Tour = p.tour();
-    //cost = p.cost();
-
-    //cout << "Solved " << G.numberOfNodes() << " point tour with cost " << cost << "." << endl;
-
+    
     return SUCCESS;
 }
 
@@ -65,7 +57,7 @@
  * The solution is a tour, which is an ordered list of waypoints,
  * saved inside a TSPlib file. The total cost, and edges are printed.
  * 
- * usage: solveDTSP [OPTIONS] <inputGMLFile> <startHeading> <turnRadius>
+ * usage: solveDtsp [OPTIONS] <inputGMLFile> <startHeading> <turnRadius>
  * @param inputGMLFile  input GML file to read the problem from
  * @param startHeading  a starting heading in radians [0,2*pi)
  * @param turnRadius    a turning radius in radians
@@ -76,7 +68,7 @@
  *     Enables debug mode in logging module for extra information.
  * -h, --help
  *     Prints a help message and exits.
- * -a, --algorithm=<PlanningAlgorithmName>
+ * -a, --algorithm=<DtspPlanningAlgorithmName>
  *     Sets the planning algorithm ("nearest", "alternating", "randomized").
  * -r,--return
  *     Whether to return to initial configuration.
@@ -106,7 +98,7 @@ int main(int argc, char *argv[]) {
         options.add_options()
             ("d,debug", "Enable debugging messages",cxxopts::value<bool>(debug))
             ("h,help", "Print this message")
-            ("a,algorithm", "Algorithm for DTSP (nearest,alternating,randomized =default)",
+            ("a,algorithm", "Algorithm for Dtsp (nearest,alternating,randomized =default)",
                 cxxopts::value<std::string>()->default_value("randomized"), "DTSP_ALGORITHM")
             ("r,noreturn", "Disables returning to initial configuration", cxxopts::value<bool>(noReturn))
             ("v,verbose", "Prints increasingly verbose messages", cxxopts::value<int>(verbose))
@@ -152,13 +144,13 @@ int main(int argc, char *argv[]) {
         if (options.count("algorithm")) {
             std::string algName = options["algorithm"].as<std::string>();
             if (algName.compare("nearest") == 0) {
-                p.algorithm(PlanningAlgorithm::NEAREST_NEIGHBOR);
+                p.algorithm(dpp::DtspPlanningAlgorithm::NEAREST_NEIGHBOR);
             }
             else if (algName.compare("alternating") == 0) {
-                p.algorithm(PlanningAlgorithm::ALTERNATING);
+                p.algorithm(dpp::DtspPlanningAlgorithm::ALTERNATING);
             }
             else if (algName.compare("randomized") == 0) {
-                p.algorithm(PlanningAlgorithm::RANDOMIZED);
+                p.algorithm(dpp::DtspPlanningAlgorithm::RANDOMIZED);
             }
             else {
                 std::cout << program_name << ": " << "Invalid algorithm \'" << algName << "\'." << std::endl;

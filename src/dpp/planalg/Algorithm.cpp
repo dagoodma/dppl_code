@@ -21,7 +21,7 @@
 
 namespace dpp {
 
-const char* Algorithm::TypeText[] = { "DTSP", "CPP" };
+const char* Algorithm::TypeText[] = { "Dtsp", "CPP" };
 
 Algorithm::~Algorithm() {
     

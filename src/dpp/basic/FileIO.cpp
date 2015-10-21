@@ -10,16 +10,78 @@
 #include <regex>
 #include <stdbool.h>
 
-#include <dpp/basic/TSPIO.h>
+#include <dpp/basic/basic.h>
+#include <dpp/basic/FileIO.h>
 #include <dpp/basic/Logger.h>
 
 namespace dpp {
 
-const char* TSPIO::ProblemTypeText[] = { "TSP", "ATSP", "HCP" };
+const char* TspFile::ProblemTypeText[] = { "TSP", "ATSP", "HCP" };
 
-void writeTSPHeader(std::ofstream& tspFile, TSPIO::ProblemType type, std::string name,
+const char* GmlFile::TypeText[] = { "Graph", "Polygon" };
+
+// ---------------- GmlFile Functions -----------------
+/**
+ * Reads a polygon from the points in a GML file.
+ */
+int readPolygonFromGmlFile(std::string filename, ogdf::DPolygon &poly) {
+    ogdf::List<ogdf::DPoint> Points;
+    if (readPointsFromGmlFile(filename, Points) != SUCCESS) {
+        return FAILURE;
+    }
+
+    // Copy DPoints into a polygon
+    ogdf::ListIterator<ogdf::DPoint> iter;
+    for ( iter = Points.begin(); iter != Points.end(); iter++ ) {
+        ogdf::DPoint p = *iter;
+        if (!poly.containsPoint(p)) {
+            poly.pushBack(p);
+        }
+    }
+
+    return SUCCESS;
+}
+
+/**
+ * Reads a points from a GML file.
+ */
+int readPointsFromGmlFile(std::string filename, ogdf::List<ogdf::DPoint> &Points) {
+    ogdf::Graph G;
+    ogdf::GraphAttributes GA(G, DPP_GRAPH_ATTRIBUTES);
+    Logger::logDebug(DPP_LOGGER_VERBOSE_2) << "Reading " << filename << " for points." << std::endl;
+
+    if (readGraphFromGmlFile(filename, G, GA) != SUCCESS) {
+        return FAILURE;
+    }
+    Logger::logDebug(DPP_LOGGER_VERBOSE_2) << "Found " << G.numberOfNodes() << ". Creating list..." << std::endl;
+    ogdf::node u;
+    int i = 0;
+    forall_nodes(u, G) {
+        ogdf::DPoint p(GA.x(u), GA.y(u));
+        Points.pushBack(p);
+        i++;
+        Logger::logDebug(DPP_LOGGER_VERBOSE_2) << "   Point " << GA.idNode(u) << ": "
+            << GA.x(u) << ", " << GA.y(u) << "." << std::endl;
+    }
+    DPP_ASSERT(i == G.numberOfNodes());
+    return SUCCESS;
+}
+
+/**
+ * Reads a graph and attributes from a GML file.
+ */
+int readGraphFromGmlFile(std::string filename, ogdf::Graph &G, ogdf::GraphAttributes &GA) {
+    if (ogdf::GraphIO::readGML(GA, G, filename)) {
+        return SUCCESS;
+    }
+    return FAILURE;
+}
+
+// ---------------- TspFile Functions -----------------
+
+void writeTspHeader(std::ofstream& tspFile, TspFile::ProblemType type, std::string name,
     std::string comment, int dimension) {
-    std::string typeStr = TSPIO::ProblemTypeText[type];
+    std::string typeStr = TspFile::ProblemTypeText[type];
     tspFile << 
         "NAME: " << name << std::endl << 
         "TYPE: " << typeStr << std::endl <<
@@ -30,7 +92,7 @@ void writeTSPHeader(std::ofstream& tspFile, TSPIO::ProblemType type, std::string
 /**
  * Write a symmetric TSP file of graph G with Euclidean distance metric.
  */
-int writeETSPFile(std::string filename, std::string name, std::string comment,
+int writeEtspFile(std::string filename, std::string name, std::string comment,
     ogdf::Graph &G, ogdf::GraphAttributes &GA) {
     std::ofstream tspFile;
     tspFile.open(filename, std::ios_base::trunc);
@@ -41,7 +103,7 @@ int writeETSPFile(std::string filename, std::string name, std::string comment,
 
     // Write the header, then the data section
     int n = G.numberOfNodes();
-    writeTSPHeader(tspFile, TSPIO::ProblemType::ETSP, name, comment, n);
+    writeTspHeader(tspFile, TspFile::ProblemType::ETSP, name, comment, n);
     tspFile <<
         "EDGE_WEIGHT_TYPE: EUC_2D" << std::endl <<
         "NODE_COORD_SECTION" << std::endl << std::scientific;
@@ -65,7 +127,7 @@ int writeETSPFile(std::string filename, std::string name, std::string comment,
 /**
  * Write an asymmetrical TSP file using A.
  */
-int writeATSPFile(std::string filename, std::string name, std::string comment, 
+int writeAtspFile(std::string filename, std::string name, std::string comment, 
     ogdf::Graph &G, NodeMatrix<double> &A) {
     std::ofstream tspFile;
     tspFile.open(filename, std::ios_base::trunc);
@@ -76,7 +138,7 @@ int writeATSPFile(std::string filename, std::string name, std::string comment,
 
     // Write the header, then the data section
     int n = A.numberOfNodes();
-    writeTSPHeader(tspFile, TSPIO::ProblemType::ATSP, name, comment, n);
+    writeTspHeader(tspFile, TspFile::ProblemType::ATSP, name, comment, n);
     tspFile <<
         "EDGE_WEIGHT_TYPE: EXPLICIT" << std::endl <<
         "EDGE_WEIGHT_FORMAT: FULL_MATRIX" << std::endl <<
@@ -97,7 +159,7 @@ int writeATSPFile(std::string filename, std::string name, std::string comment,
 }
 
 
-int writePARFile(std::string filename, std::string tspFilename, std::string outputFilename,
+int writeParFile(std::string filename, std::string tspFilename, std::string outputFilename,
     int runs) {
     std::ofstream parFile;
     parFile.open(filename, std::ios_base::trunc);
@@ -122,7 +184,7 @@ int writePARFile(std::string filename, std::string tspFilename, std::string outp
 /**
  * Reads a TSP tour file into G and GA using the reference Graph and attributes.
  */
- int readTSPTourFile(std::string filename, ogdf::Graph &G, ogdf::GraphAttributes &GA,
+ int readTspTourFile(std::string filename, ogdf::Graph &G, ogdf::GraphAttributes &GA,
     ogdf::List<ogdf::node> &tour, bool returnToInitial) {
     std::ifstream tourFile;
     tourFile.open(filename);

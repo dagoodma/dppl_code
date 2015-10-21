@@ -60,13 +60,13 @@ protected:
 /*
  * Dubins Traveling Salesperson Problem algorithm.
  */
-class AlgorithmDTSP : public Algorithm {
+class AlgorithmDtsp : public Algorithm {
 public:
-    AlgorithmDTSP(std::string name)
+    AlgorithmDtsp(std::string name)
         : Algorithm(name, Algorithm::Type::DTSP)
     { }
 
-    ~AlgorithmDTSP() 
+    ~AlgorithmDtsp() 
     { }
 
     virtual int run(Graph &G, GraphAttributes &GA, double x, double r,
@@ -77,13 +77,13 @@ public:
 /*
  * Coverage Path Planning algorithm.
  */
-class AlgorithmCPP : public Algorithm {
+class AlgorithmCpp : public Algorithm {
 public:
-    AlgorithmCPP(std::string name)
+    AlgorithmCpp(std::string name)
         : Algorithm(name, Algorithm::Type::CPP)
     { }
 
-    ~AlgorithmCPP() {
+    ~AlgorithmCpp() {
     }
 
     virtual int run(void) = 0;

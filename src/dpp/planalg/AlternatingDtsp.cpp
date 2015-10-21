@@ -1,5 +1,5 @@
 /*
- * Implementation of dpp::AlternatingDTSP class for solving DTSP problems
+ * Implementation of dpp::AlternatingDtsp class for solving Dtsp problems
  * with the alternating algorithm.
  *
  * Derived from the Alternating Algorithm (Savla et al. 2005).
@@ -17,8 +17,8 @@
 #include <dpp/basic/basic.h>
 #include <dpp/basic/Logger.h>
 #include <dpp/basic/Path.h>
-#include <dpp/planalg/AlternatingDTSP.h>
-#include <dpp/basic/TSPIO.h>
+#include <dpp/planalg/AlternatingDtsp.h>
+#include <dpp/basic/FileIO.h>
 #include <dpp/basic/Util.h>
 
 #define USE_INITIAL_HEADING // don't re-assign initial heading
@@ -87,10 +87,20 @@ void alternatingAlgorithm(Graph &G, GraphAttributes &GA, List<node> &Tour,
         i++;
         u_last = u;
     }
+
+    // Set heading of the last node in the tour to it's predecessor's heading
+    // if it's not the first node.
+    if (Tour.back() != Tour.front()) {
+        iter = Tour.rbegin();
+        node u = *iter;
+        iter--; // reverse iterator decrements
+        node v = *iter;
+        Headings[u] = Headings[v];
+    }
 }
 
 /**
- * Solves the DTSP with the alternating algorithm. The tour, headings, and total
+ * Solves the Dtsp with the alternating algorithm. The tour, headings, and total
  * cost are saved into their respective parameters.
  * @param G         a graph of the problem
  * @param GA        attributes of graph
@@ -102,7 +112,7 @@ void alternatingAlgorithm(Graph &G, GraphAttributes &GA, List<node> &Tour,
  * @param cost      holds the total cost result
  * @return An exit code (0==SUCCESS)
  */
-int AlternatingDTSP::run(Graph &G, GraphAttributes &GA, double x, double r,
+int AlternatingDtsp::run(Graph &G, GraphAttributes &GA, double x, double r,
     List<node> &Tour, List<edge> &Edges, NodeArray<double> &Headings, double &cost,
     bool returnToInitial) {
     // Check arguments
@@ -138,8 +148,8 @@ int AlternatingDTSP::run(Graph &G, GraphAttributes &GA, double x, double r,
     // Find the best configuration over many iterations
     Timer *t1 = new Timer();
 
-    if (writePARFile(parFilename,tspFilename, tourFilename) != SUCCESS
-        || writeETSPFile(tspFilename, problemName, problemComment, G, GA) != SUCCESS) {
+    if (writeParFile(parFilename,tspFilename, tourFilename) != SUCCESS
+        || writeEtspFile(tspFilename, problemName, problemComment, G, GA) != SUCCESS) {
         throw std::runtime_error("Failed creating TSP files.");
     }
 
@@ -156,7 +166,7 @@ int AlternatingDTSP::run(Graph &G, GraphAttributes &GA, double x, double r,
         << " ETSP tour in " << tourFilename << "." << std::endl;
 
     // Read LKH solution from tour file
-    if (readTSPTourFile(tourFilename, G, GA, Tour) != SUCCESS) {
+    if (readTspTourFile(tourFilename, G, GA, Tour) != SUCCESS) {
         std::runtime_error("Could not read solution from LKH tour file!");
     }
 
@@ -181,12 +191,12 @@ int AlternatingDTSP::run(Graph &G, GraphAttributes &GA, double x, double r,
 
     // Cleanup
     if (std::remove(tspFilename.c_str()) != 0 
-        && std::remove(parFilename.c_str()) != 0
-        && std::remove(tourFilename.c_str()) != 0) {
+        || std::remove(parFilename.c_str()) != 0
+        || std::remove(tourFilename.c_str()) != 0) {
         throw std::runtime_error("Failed to delete temporary files.");
     }
 
     return SUCCESS;
-} // AlternatingDTSP::run()
+} // AlternatingDtsp::run()
 
 } // namespace dpp

@@ -8,6 +8,56 @@
  */
  #include "mexHelper.h"
 
+
+/**
+ * Pack the graphs nodes into the matrix of vertices V.
+ * @param G     The graph to pack into V.
+ * @param GA    Attributes of the graph.
+ * @param pV    A pointer to an n-by-2 matrix of vertices.
+ * @return      Number of nodes packed into V.
+ * @note pV should be allocated as n-by-2, where n is the number of nodes in G.
+ */
+int packNodes(Graph &G, GraphAttributes &GA, double *pV) {
+    node u;
+    int i = 0;
+    int n = G.numberOfNodes();
+    forall_nodes(u,G) {
+        MEX_MAT(pV, i, 0, n) = GA.x(u);
+        MEX_MAT(pV, i, 1, n) = GA.y(u);
+        i++;
+    }
+
+    return i;
+}
+
+/**
+ * Adds vertices to the polygon by unpacking P.
+ * @param polygon   Polygon to add points to.
+ * @param pP        A pointer to an n-by-2 matrix of polygon vertices.
+ * @param n         Number of rows in pP.
+ * @return          Number of points added to the polygon.
+ */
+int unpackPolygon(DPolygon &polygon, double *pP, int n) {
+
+    #ifdef MEX_DEBUG
+    mexPrintf("Printing polygon vertices...\n");
+    #endif
+    int i;
+    for (i = 0; i < n; i++) {
+        double x = MEX_MAT(pP, i, 0, n);
+        double y = MEX_MAT(pP, i, 1, n);
+
+        #ifdef MEX_DEBUG
+        mexPrintf("Vertex %d at (%0.1f, %0.1f)\n", i + 1, x, y);
+        #endif
+
+        DPoint p(x,y);
+        polygon.pushBack(p);
+    }
+
+    return i;
+}
+
 /**
  * Add nodes to the graph by unpacking V.
  * @param G     Graph.
