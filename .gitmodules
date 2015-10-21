@@ -1,4 +1,4 @@
 [submodule "matlab"]
 	path = matlab
-	url = git@github.com:dagoodma/dubins_coverage_matlab.git
+	url = git@github.com:dagoodma/dpp_matlab.git
 	branch = master
