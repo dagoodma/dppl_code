@@ -2,17 +2,6 @@
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 set(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR})
 
-#ADD_EXECUTABLE( nearestNeighborDtsp nearestNeighborDtsp.cpp Dubins.cpp )
-#ADD_EXECUTABLE( computeDubinsDistancesAtsp computeDubinsDistancesAtsp.cpp Dubins.cpp TSPLib.cpp )
-#ADD_EXECUTABLE( alternatingDtsp alternatingDtsp.cpp TSPLib.cpp Dubins.cpp )
-#ADD_EXECUTABLE( randomizedDtsp randomizedDtsp.cpp TSPLib.cpp Dubins.cpp )
-#
-#TARGET_LINK_LIBRARIES( nearestNeighborDtsp OGDF COIN )
-#TARGET_LINK_LIBRARIES( computeDubinsDistancesAtsp OGDF COIN )
-#TARGET_LINK_LIBRARIES( optimalEuclideanTSP OGDF COIN LKH )
-#TARGET_LINK_LIBRARIES( alternatingDtsp OGDF COIN LKH )
-#TARGET_LINK_LIBRARIES( randomizedDtsp OGDF COIN LKH )
-
 ################################
 # DPP Library
 ################################
@@ -29,6 +18,7 @@ add_library(DPP STATIC
     dpp/planner/PathPlanner.cpp
     dpp/planner/DubinsVehiclePathPlanner.cpp
     dpp/planner/DubinsSensorPathPlanner.cpp
+    dpp/planner/WaypointSequencePlanner.cpp
 )
 
 TARGET_LINK_LIBRARIES( DPP OGDF COIN )

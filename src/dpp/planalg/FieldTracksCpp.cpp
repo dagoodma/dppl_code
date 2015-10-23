@@ -37,6 +37,7 @@ namespace dpp {
 int addNodesFromPolygonGrid(Graph &G, GraphAttributes &GA, DPolygon &poly, double e) {
 
     // Find a bounding rectangle
+    // FIXME use GraphAttributes::boundingBox()
     double min_x = std::numeric_limits<double>::max(),
            max_x = - std::numeric_limits<double>::max(),
            min_y = std::numeric_limits<double>::max(),
