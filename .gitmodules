@@ -2,3 +2,6 @@
 	path = matlab
 	url = git@github.com:dagoodma/dpp_matlab.git
 	branch = master
+[submodule "test/gtest"]
+	path = test/gtest
+	url = https://github.com/google/googletest.git
