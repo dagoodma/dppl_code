@@ -7,19 +7,25 @@
 
 #include <dpp/basic/basic.h>
 
-#define DPP_LOGGER_DEFAULT_VERBOSE  LV_VERBOSE_0
-
-// Set logger level to debug if compiled in debug mode
-#ifdef DPP_DEBUG
-#define DPP_LOGGER_DEFAULT_LEVEL    LL_DEBUG
-#else
-#define DPP_LOGGER_DEFAULT_LEVEL    LL_INFO
-#endif
+#define DPP_LOGGER_LEVEL_DEBUG  (dpp::Logger::Level::LL_DEBUG)
+#define DPP_LOGGER_LEVEL_INFO  (dpp::Logger::Level::LL_INFO)
+#define DPP_LOGGER_LEVEL_WARN  (dpp::Logger::Level::LL_WARN)
+#define DPP_LOGGER_LEVEL_ERROR  (dpp::Logger::Level::LL_ERROR)
 
 #define DPP_LOGGER_VERBOSE_0    (dpp::Logger::Verbosity::LV_VERBOSE_0)
 #define DPP_LOGGER_VERBOSE_1    (dpp::Logger::Verbosity::LV_VERBOSE_1)
 #define DPP_LOGGER_VERBOSE_2    (dpp::Logger::Verbosity::LV_VERBOSE_2)
 #define DPP_LOGGER_VERBOSE_3    (dpp::Logger::Verbosity::LV_VERBOSE_3)
+
+
+#define DPP_LOGGER_DEFAULT_VERBOSE  DPP_LOGGER_VERBOSE_0
+
+// Set logger level to debug if compiled in debug mode, otherwise info
+#ifdef DPP_DEBUG
+#define DPP_LOGGER_DEFAULT_LEVEL    DPP_LOGGER_LEVEL_DEBUG
+#else
+#define DPP_LOGGER_DEFAULT_LEVEL    DPP_LOGGER_LEVEL_INFO
+#endif
 
 namespace dpp {
 
