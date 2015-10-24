@@ -8,6 +8,7 @@ should be installed with a package manager or manually (LKH):
 
 * LKH 2.0.7
   Note: LKH must be compiled manually, and the binary placed in the DPP build directory.
+  http://www.akira.ruc.dk/~keld/research/LKH/LKH-2.0.7.tgz
   http://www.akira.ruc.dk/~keld/research/LKH/
 
 The rest of the dependecies can be obtained by cloning this project recursively
