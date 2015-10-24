@@ -5,3 +5,7 @@
 [submodule "test/gtest"]
 	path = test/gtest
 	url = https://github.com/google/googletest.git
+[submodule "lib/cxxopts"]
+	path = lib/cxxopts
+	url = https://github.com/google/googletest.git
+	branch = master
