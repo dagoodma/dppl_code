@@ -13,3 +13,11 @@
 	path = lib/dubins-curves
 	url = git@github.com:dagoodma/Dubins-Curves.git
 	branch = cpp
+[submodule "ogdf"]
+	path = ogdf
+	url = https://github.com/ogdf/ogdf.git
+	branch = master
+[submodule "lib/ogdf"]
+	path = lib/ogdf
+	url = https://github.com/ogdf/ogdf.git
+	branch = master
