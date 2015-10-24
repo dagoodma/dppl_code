@@ -15,7 +15,7 @@ typedef struct Waypoint {
 typedef struct WaypointSequenceTransform {
     int oldIndex;
     int newIndex;
-};
+} WaypointSequenceTransform;
 
 typedef std::vector<Waypoint> WaypointList;
 
@@ -23,6 +23,7 @@ class WaypointSequencePlanner : private DubinsVehiclePathPlanner {
 public:
     using DubinsVehiclePathPlanner::DtspPlanningAlgorithm;
     using DubinsVehiclePathPlanner::algorithm;
+    using PathPlanner::algorithmName;
     using DubinsPathPlanner::initialHeading;
     using DubinsPathPlanner::turnRadius;
     using PathPlanner::waypointCount;
@@ -35,14 +36,14 @@ public:
            m_sequenceTransformList(m_G)
     {
         m_initialHeading = initialHeading;
-        m_originalNodeSequenceList.pushBack(nullptr); // skip element 0
+        m_originalNodeSequenceList.push_back(nullptr); // skip element 0
     }
 
 
     ~WaypointSequencePlanner()
     { }
 
-    void planWaypointSequence(void);
+    bool planWaypointSequence(void);
 
     int newWaypointSequenceId(int oldIndex);
 
@@ -59,7 +60,9 @@ public:
 
 private:
     ogdf::NodeArray<WaypointSequenceTransform> m_sequenceTransformList;
-    std::vector<ogdf::node> m_originalNodeSequenceList; 
+    std::vector<ogdf::node> m_originalNodeSequenceList; // FIXME use hash map instead?
+};
+
 } // dpp
 
 #endif // _SIMPLE

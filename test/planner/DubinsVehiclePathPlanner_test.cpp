@@ -188,8 +188,8 @@ TEST_F(DubinsVehiclePathPlannerFeatureTest, CopySolutionEquivalence) {
     // Add the nodes to the planner
     initializeWaypoints(nodes);
 
-    EXPECT_EQ(true, m_planner.solve());
-    EXPECT_EQ(true, m_planner.haveSolution());
+    EXPECT_TRUE(m_planner.solve());
+    EXPECT_TRUE(m_planner.haveSolution());
 
     Graph G;
     GraphAttributes GA(G, DPP_GRAPH_ATTRIBUTES);
@@ -201,7 +201,7 @@ TEST_F(DubinsVehiclePathPlannerFeatureTest, CopySolutionEquivalence) {
     m_planner.copySolution(G, GA, Tour, Edges, Headings, cost);
 
     Graph m_G = *(m_planner.graphPtr());
-    EXPECT_EQ(true, dpp::graphsAreEquivalent(*(m_planner.graphPtr()),
+    EXPECT_TRUE(dpp::graphsAreEquivalent(*(m_planner.graphPtr()),
         m_planner.graphAttributes(), G, GA));
 
     // TODO compare tour, edges, and headings

@@ -34,8 +34,11 @@ void WaypointSequencePlanner::addWaypoints(const WaypointList list) {
     m_G.clear();
 
     int i;
+
+    Logger::logDebug(DPP_LOGGER_VERBOSE_2) << "Adding list of waypoints: " << std::endl;
     for (const auto& waypoint : list) {
         i = addWaypoint(waypoint);
+        Logger::logDebug(DPP_LOGGER_VERBOSE_2) << "    (" << waypoint.x << ", " << waypoint.y << ")" << std::endl;
     }
 }
 
@@ -46,44 +49,57 @@ void WaypointSequencePlanner::addWaypoints(const WaypointList list) {
  * @remark Waypoint coordinate-pair must be unique.
  */
 int WaypointSequencePlanner::addWaypoint(const Waypoint waypoint) {
-    DPP_ASSERT(!_containsWaypoint(waypoint));
+    DPP_ASSERT(!containsWaypoint(waypoint));
     // Create the new node with sequence id i
     int i = waypointCount() + 1;
     ogdf::node u = m_G.newNode();
     m_GA.x(u) = waypoint.x;
-    m_GA.x(u) = waypoint.x;
+    m_GA.y(u) = waypoint.y;
     m_GA.idNode(u) = i;
 
     // Configure the transform list for the waypoint
     m_sequenceTransformList[u].oldIndex = i;
     m_sequenceTransformList[u].newIndex = DPP_SEQUENCE_ID_NOT_SET;
 
+    m_originalNodeSequenceList.push_back(u);
+/*
     m_originalNodeSequenceList.reserve(i);
     m_originalNodeSequenceList[i] = u;
-
+*/
     return i;
 }
 
 /**
  * Solve for the waypoint sequence that minimizes path length for the Dubins
- * vehicle.
+ * vehicle, then builds the waypoint sequence transform list for lookup.
  * @remark Retrieve the new sequence id through newWaypointSequenceId()
+ * @return true if the planner succeeded
  */
-void WaypointSequencePlanner::planWaypointSequence(void) {
+bool WaypointSequencePlanner::planWaypointSequence(void) {
     DPP_ASSERT(waypointCount() > 1);
+    bool result = DubinsVehiclePathPlanner::solve();
 
-    DubinsVehiclePathPlanner::solve();
+    if (!result) return result;
 
-    // Find new sequence ids
-    int newIndex = 1;
-    for ( tourIter = m_Edges.begin(); tourIter != m_Edges.end(); tourIter++ ) {
-        ogdf::edge e = *tourIter;
+    // Find new sequence ids for transform list
+    Logger::logDebug(DPP_LOGGER_VERBOSE_2) << "Building sequence transform list:" << std::endl;
+    int i = 1;
+    ogdf::ListIterator<ogdf::node> tourIter;
+    for ( tourIter = m_Tour.begin(); tourIter != m_Tour.end(); tourIter++ ) {
+        ogdf::node u = *tourIter;
 
-        node u = e->source();
-        node v = e->target();
+        // Skip origin for returning tours
+        if (u == m_G.firstNode() && tourIter.succ() == m_Tour.end())
+            break;
 
-        int newIndex
+        m_sequenceTransformList[u].newIndex = i++;
+
+        Logger::logDebug(DPP_LOGGER_VERBOSE_2) << "Node " << m_GA.idNode(u) << " -> "
+            << m_sequenceTransformList[u].newIndex << ", originally "
+            << m_sequenceTransformList[u].oldIndex << std::endl;
     }
+
+    return result;
 }
 
 /**
@@ -110,9 +126,15 @@ int WaypointSequencePlanner::newWaypointSequenceId(int oldIndex) {
 bool WaypointSequencePlanner::containsWaypoint(double x, double y) {
     node u;
     forall_nodes(u, m_G) {
+        Logger::logDebug(DPP_LOGGER_VERBOSE_3) << "Comparing (" << x << ", " << y << ") with"
+            << " node " << m_GA.idNode(u) << " (" << m_GA.x(u) << ", "
+            << m_GA.y(u) << ")." << std::endl;
+
         if (m_GA.x(u) == x && m_GA.y(u) == y) {
             return true;
         }
     }
     return false;
 }
+
+} // namespace dpp

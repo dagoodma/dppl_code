@@ -28,6 +28,9 @@ include_directories(SYSTEM ${GMOCK_DIR}/../googletest/include
 link_directories( ${CMAKE_SOURCE_DIR}/lib/dubins-curves )
 include_directories( ${CMAKE_SOURCE_DIR}/lib/dubins-curves/include )
 
+# DPP
+include_directories( ${CMAKE_SOURCE_DIR}/test )
+
 ################################
 # Unit Tests
 ################################
@@ -77,6 +80,7 @@ add_test(PlanalgTests NearestNeighborDtsp_test)
 # dpp/planner/DubinsVehiclePathPlanner
 add_executable(DubinsVehiclePathPlanner_test planner/DubinsVehiclePathPlanner_test.cpp
     ../src/dpp/planner/DubinsVehiclePathPlanner.cpp
+    ../src/dpp/planner/PathPlanner.cpp
     ../src/dpp/planalg/AlternatingDtsp.cpp
     ../src/dpp/planalg/NearestNeighborDtsp.cpp
     ../src/dpp/planalg/RandomizedDtsp.cpp
@@ -86,4 +90,17 @@ add_executable(DubinsVehiclePathPlanner_test planner/DubinsVehiclePathPlanner_te
 target_link_libraries(DubinsVehiclePathPlanner_test gmock_main OGDF COIN DPP)
 add_test(PlannerTests DubinsVehiclePathPlanner_test)
 
+# dpp/planner/WaypointSequencePlanner
+add_executable(WaypointSequencePlanner_test planner/WaypointSequencePlanner_test.cpp
+    ../src/dpp/planner/WaypointSequencePlanner.cpp
+    ../src/dpp/planner/DubinsVehiclePathPlanner.cpp
+    ../src/dpp/planner/PathPlanner.cpp
+    ../src/dpp/planalg/AlternatingDtsp.cpp
+    ../src/dpp/planalg/NearestNeighborDtsp.cpp
+    ../src/dpp/planalg/RandomizedDtsp.cpp
+    ../src/dpp/planalg/Algorithm.cpp
+    ../src/dpp/basic/Path.cpp
+    ../src/dpp/basic/Logger.cpp)
+target_link_libraries(WaypointSequencePlanner_test gmock_main OGDF COIN DPP)
+add_test(PlannerTests WaypointSequencePlanner_test)
 
