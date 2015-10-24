@@ -18,6 +18,8 @@ link_directories( ${CMAKE_SOURCE_DIR}/lib/ogdf/_debug )
 ################################
 # Extra libraries
 ################################
+set(LKH_EXECUTABLE_PATH "LKH") # uses relative path or $PATH
+
 # Header-only libraries are include only
 include_directories( ${CMAKE_SOURCE_DIR}/lib/eigen-eigen-bdd17ee3b1b3 )
 include_directories( ${CMAKE_SOURCE_DIR}/lib/cxxopts/src )
