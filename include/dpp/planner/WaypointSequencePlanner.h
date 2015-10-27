@@ -36,16 +36,21 @@ public:
            m_sequenceTransformList(m_G)
     {
         m_initialHeading = initialHeading;
-        m_originalNodeSequenceList.push_back(nullptr); // skip element 0
     }
 
 
     ~WaypointSequencePlanner()
     { }
 
+    bool solve(void) {
+        return planWaypointSequence();
+    }
+
     bool planWaypointSequence(void);
 
     int newWaypointSequenceId(int oldIndex);
+
+    std::vector<int> newWaypointSequenceList(void);
 
     // FIXME move some of these functions up to the PathPlanner abstract class and overload them?
     void addWaypoints(const WaypointList list);
@@ -60,7 +65,7 @@ public:
 
 private:
     ogdf::NodeArray<WaypointSequenceTransform> m_sequenceTransformList;
-    std::vector<ogdf::node> m_originalNodeSequenceList; // FIXME use hash map instead?
+    std::vector<ogdf::node> m_originalNodeList, m_newNodeList;
 };
 
 } // dpp
