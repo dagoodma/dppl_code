@@ -119,6 +119,7 @@ inline bool operator!=(VehicleConfiguration &C1, VehicleConfiguration &C2) {
 
 inline std::ostream & operator<<(std::ostream & stream, const VehicleConfiguration & v) {
     stream << "(" << v.m_position.m_x << ", " << v.m_position.m_y << ", " << v.m_heading << ")";
+    return stream;
 }
 
 } // namespace dpp
