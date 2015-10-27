@@ -15,6 +15,9 @@
 #include <dpp/basic/Path.h>
 #include <dpp/basic/NodeMatrix.h>
 
+
+#define DPP_MAX_EDGE_COST         999999.0 // FIXME scale this based on edge costs
+
 namespace dpp {
 
 

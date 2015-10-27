@@ -23,8 +23,6 @@ using Eigen::Vector2d;
 
 #define HEADING_TOLERANCE          1E-10 // upperbound for Euclidean metric, radius safe?
 
-#define MAX_EDGE_COST           999999.0 // todo: scale this based on edge costs
-
 namespace dpp {
 
 /**
@@ -42,7 +40,11 @@ double dubinsPathLength(VehicleConfiguration &Cs, VehicleConfiguration &Ce, doub
     Logger::logDebug(DPP_LOGGER_VERBOSE_3) << "Given Cs=" << Cs << ", Ce=" << Ce << ", r=" << r << std::endl;
     Logger::logDebug(DPP_LOGGER_VERBOSE_3) << "Got dist=" << dist << " compared to r=" << r << "." << std::endl;
 
-    DPP_ASSERT(dist >= 3.0 * r);
+    //DPP_ASSERT(dist >= 3.0 * r);
+    // FIXME: return an unfeasible path macro, eg -1
+    if (dist < 3.0 * r) {
+        return DPP_MAX_EDGE_COST;
+    }
     //if (dist < 3.0 * r) {
     //  std::domain_error("distance must be larger than 3*r");
     //}
@@ -248,7 +250,7 @@ void buildDubinsAdjacencyMatrix(ogdf::Graph &G, ogdf::GraphAttributes &GA,
 
         forall_nodes(j, G) {
             if (i == j) {
-                A[i][i] = MAX_EDGE_COST;
+                A[i][i] = DPP_MAX_EDGE_COST;
                 continue;
             }
             VehicleConfiguration Cj(GA.x(j), GA.y(j), X(j));
