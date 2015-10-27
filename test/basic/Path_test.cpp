@@ -35,7 +35,8 @@ using dpp::VehicleConfiguration;
 // Test for dubinsPathLength()
 TEST(DubinsPathLengthTest, FailsBelowMinDistance) {
     VehicleConfiguration c1(0.0,0.0,0.0), c2(0.0,0.0,0.0);
-    EXPECT_DEATH(dpp::dubinsPathLength(c1, c2, TURN_RADIUS), "Assertion failed: \\(dist >= 3\\.0 \\* r\\)");
+    //EXPECT_DEATH(dpp::dubinsPathLength(c1, c2, TURN_RADIUS), "Assertion failed: \\(dist >= 3\\.0 \\* r\\)");
+    EXPECT_DOUBLE_EQ(999999.0, dpp::dubinsPathLength(c1, c2, TURN_RADIUS));
 }
 
 // Test against DubinsCurves lib
