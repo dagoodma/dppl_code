@@ -42,22 +42,22 @@ public:
 
     static void initializeLogger(std::string logFilename);
 
-    static std::ostream & logOut(Logger::Level l = LL_INFO,
-        Logger::Verbosity v = LV_VERBOSE_0);
+    static std::ostream & logOut(Logger::Level l = Logger::Level::LL_INFO,
+        Logger::Verbosity v = Logger::Verbosity::LV_VERBOSE_0);
 
-    static std::ostream & logDebug(Logger::Verbosity v = LV_VERBOSE_0) {
+    static std::ostream & logDebug(Logger::Verbosity v = DPP_LOGGER_DEFAULT_VERBOSE) {
         return logOut(Logger::Level::LL_DEBUG, v);
     }
 
-    static std::ostream & logInfo(Logger::Verbosity v = LV_VERBOSE_0) {
+    static std::ostream & logInfo(Logger::Verbosity v = DPP_LOGGER_DEFAULT_VERBOSE) {
         return logOut(Logger::Level::LL_INFO, v);
     }
 
-    static std::ostream & logWarn(Logger::Verbosity v = LV_VERBOSE_0) {
+    static std::ostream & logWarn(Logger::Verbosity v = DPP_LOGGER_DEFAULT_VERBOSE) {
         return logOut(Logger::Level::LL_WARN, v);
     }
 
-    static std::ostream & logError(Logger::Verbosity v = LV_VERBOSE_0) {
+    static std::ostream & logError(Logger::Verbosity v = DPP_LOGGER_DEFAULT_VERBOSE) {
         return logOut(Logger::Level::LL_ERROR, v);
     }
 
@@ -74,7 +74,7 @@ public:
     }
 
     void verbose(int i) {
-        DPP_ASSERT(i >= DPP_LOGGER_VERBOSE_0);
+        DPP_ASSERT(i >= (dpp::Logger::Verbosity::LV_VERBOSE_0));
         m_verbosity = static_cast<Verbosity>(i);
     }
 
@@ -92,10 +92,14 @@ private:
         m_verbosity(DPP_LOGGER_DEFAULT_VERBOSE),
         m_level(DPP_LOGGER_DEFAULT_LEVEL)
     { }
+
     Logger(Logger const&) // copy constructor is private for singleton class
     { }
+
     Logger& operator=(Logger const&) // assignment is private ------"------
-    { }
+    { 
+        return *this; 
+    }
 
     // Attributes
     static Logger* m_pInstance;
