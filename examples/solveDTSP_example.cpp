@@ -21,26 +21,17 @@
 
 using namespace std;
 
-/** Main Entry Point
- * The solution is a tour, which is an ordered list of waypoints,
- * saved inside as a TSPlib file. The total cost is printed.
- * 
- * usage: solveDTSP [<inputGMLFile> <startHeading> <turnRadius>
- * @param inputGMLFile  input GML file to read the problem from
- * @param startHeading  a starting heading in radians [0,2*pi)
- * @param turnRadius    a turning radius in radians
- * @return An exit code (0==SUCCESS)
+/**
+ * This example code solves an 8 waypoint triangle pattern with a turn radius
+ * of 10 meters, and an initial heading of 0 radians (north). The initial position
+ * is the first node in the loaded .gml graph.
  */
 int main(int argc, char *argv[]) {
-    // Check input arguments
-    if (argc != 4) {
-        cerr << "Expected 3 arguments!" << endl;
-        exit(1);
-    }
-    // Read input arguments
-    string inputFilename = argv[1];
-    double x = atof(argv[2]);
-    double r = atof(argv[3]);
+
+    // Read input arguments (this compiles into: build_dir/examples/)
+    string inputFilename("../../data/triangle-8wp.gml");
+    double x = 0.0;
+    double r = 10.0;
 
     // Build path planner and find a solution
     dpp::DubinsVehiclePathPlanner p;
@@ -52,18 +43,19 @@ int main(int argc, char *argv[]) {
 
     p.solve();
 
-    // Results
-    ogdf::Graph G = p.graph();
+    // Results. Must use graph pointer.
+    ogdf::Graph *G = p.graphPtr();
     ogdf::GraphAttributes GA = p.graphAttributes();
     ogdf::List<ogdf::edge> E = p.edges();
     ogdf::List<ogdf::node> Tour = p.tour();
+    ogdf::NodeArray<double> Headings = p.headings();
     double cost = p.cost();
 
-    cout << "Solved " << G.numberOfNodes() << " point tour with cost " << cost << "." << endl;
+    // Print headings and edge list
+    ogdf::node u;
+    std::cout << "Solved " << G->numberOfNodes() << " point tour with cost " << cost << "." << std::endl;
+    std::cout << dpp::printHeadings(*G, GA, Headings);
+    std::cout << dpp::printEdges(*G, GA, E);
 
-    // Print edge list
-    dpp::printEdges(G, GA, E);
-
-    return SUCCESS;
-
+    return 0;
 }

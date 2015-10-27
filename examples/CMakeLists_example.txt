@@ -24,11 +24,11 @@ endif()
 find_library(OGDF ogdf)
 find_library(COIN coin)
 
-include_directories( ${CMAKE_SOURCE_DIR}/../../lib/ogdf/include )
+include_directories( ${CMAKE_SOURCE_DIR}../../lib/ogdf/include )
 if ( CMAKE_BUILD_TYPE MATCHES Debug )
-    link_directories( ${CMAKE_SOURCE_DIR}/../../lib/ogdf/_debug )
+    link_directories( ${CMAKE_SOURCE_DIR}../../lib/ogdf/_debug )
 else()
-    link_directories( ${CMAKE_SOURCE_DIR}/../../lib/ogdf/_release )
+    link_directories( ${CMAKE_SOURCE_DIR}../../lib/ogdf/_release )
 endif()
 
 
