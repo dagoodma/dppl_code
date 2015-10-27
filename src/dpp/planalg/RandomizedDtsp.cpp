@@ -80,6 +80,10 @@ void randomizeHeadings(Graph &G, GraphAttributes &GA, NodeArray<double> &Heading
  * @param cost      holds the total cost result
  * @return An exit code (0==SUCCESS)
  */
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma GCC diagnostic push 
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 int RandomizedDtsp::run(Graph &G, GraphAttributes &GA, double x, double r,
     List<node> &Tour, List<edge> &Edges, NodeArray<double> &Headings, double &cost,
     bool returnToInitial) {
@@ -195,5 +199,7 @@ int RandomizedDtsp::run(Graph &G, GraphAttributes &GA, double x, double r,
 
     return SUCCESS;
 } // RandomizedDtsp::run()
+#pragma clang diagnostic pop
+#pragma GCC diagnostic pop
 
 } // namespace dpp

@@ -112,6 +112,10 @@ void alternatingAlgorithm(Graph &G, GraphAttributes &GA, List<node> &Tour,
  * @param cost      holds the total cost result
  * @return An exit code (0==SUCCESS)
  */
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma GCC diagnostic push 
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 int AlternatingDtsp::run(Graph &G, GraphAttributes &GA, double x, double r,
     List<node> &Tour, List<edge> &Edges, NodeArray<double> &Headings, double &cost,
     bool returnToInitial) {
@@ -198,5 +202,7 @@ int AlternatingDtsp::run(Graph &G, GraphAttributes &GA, double x, double r,
 
     return SUCCESS;
 } // AlternatingDtsp::run()
+#pragma clang diagnostic pop
+#pragma GCC diagnostic pop
 
 } // namespace dpp
