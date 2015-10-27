@@ -7,7 +7,7 @@
 	url = https://github.com/google/googletest.git
 [submodule "lib/cxxopts"]
 	path = lib/cxxopts
-	url = https://github.com/google/googletest.git
+	url = https://github.com/jarro2783/cxxopts.git
 	branch = master
 [submodule "lib/dubins-curves"]
 	path = lib/dubins-curves

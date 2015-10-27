@@ -21,7 +21,7 @@ add_library(DPP STATIC
     dpp/planner/WaypointSequencePlanner.cpp
 )
 
-TARGET_LINK_LIBRARIES( DPP OGDF COIN )
+TARGET_LINK_LIBRARIES( DPP ${OGDF_LIBRARIES} )
 
 ################################
 # Binaries
@@ -29,11 +29,9 @@ TARGET_LINK_LIBRARIES( DPP OGDF COIN )
 
 # Solve DTSP binary
 ADD_EXECUTABLE( solveDtsp solveDtsp.cpp )
-
-TARGET_LINK_LIBRARIES( solveDtsp OGDF COIN DPP )
+TARGET_LINK_LIBRARIES( solveDtsp ${OGDF_LIBRARIES} DPP )
 
 # Solve CPP as DTSP binary
 ADD_EXECUTABLE( solveCppAsDtsp solveCppAsDtsp.cpp )
-
-TARGET_LINK_LIBRARIES( solveCppAsDtsp OGDF COIN DPP )
+TARGET_LINK_LIBRARIES( solveCppAsDtsp ${OGDF_LIBRARIES} DPP )
 
