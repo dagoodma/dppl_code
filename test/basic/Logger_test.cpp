@@ -46,6 +46,10 @@ TEST(LoggerIOTest, InitializeLoggerToStream) {
 
 
 // Test for initializeLogger() with file
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma GCC diagnostic push 
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 TEST(LoggerIOTest, InitializeLoggerToFile) {
     std::string msg("Testing message.");
     std::string expectedMsg(string("Log initialized.\n") + msg);
@@ -75,6 +79,8 @@ TEST(LoggerIOTest, InitializeLoggerToFile) {
     ASSERT_EQ(0, std::remove(logFilename.c_str()));
 }
 
+#pragma clang diagnostic pop
+#pragma GCC diagnostic pop
 
 // Value-parameterized tests for dubinsTourCost()
 //#if GTEST_HAS_PARAM_TEST
