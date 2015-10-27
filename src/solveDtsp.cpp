@@ -8,7 +8,7 @@
  */
 
 #include <memory>
-#include <cxxopts.h>
+#include <cxxopts.hpp>
 #include <stacktrace.h>
 
 #include <solveDtsp.h>
@@ -101,19 +101,18 @@ int main(int argc, char *argv[]) {
             ("a,algorithm", "Algorithm for Dtsp (nearest,alternating,randomized =default)",
                 cxxopts::value<std::string>()->default_value("randomized"), "DTSP_ALGORITHM")
             ("r,noreturn", "Disables returning to initial configuration", cxxopts::value<bool>(noReturn))
-            ("v,verbose", "Prints increasingly verbose messages", cxxopts::value<int>(verbose))
-            //("", "x is the initial heading")
-            //("", "r is the turn radius of the Dubins vehicle");
-            // TODO hide these:
+            ("v,verbose", "Prints increasingly verbose messages", cxxopts::value<int>(verbose));
+
+        // Positional arguments
+        options.add_options("Positional")
             ("inputGMLFile", "Input GML file to read graph from", cxxopts::value<std::string>(), "INPUT_GML_FILE")
             ("initialHeading", "Initial heading orientation", cxxopts::value<double>(), "INITIAL_HEADING")
             ("turnRadius", "Dubins vehicle turning radius", cxxopts::value<double>(), "TURN_RADIUS");
-
-
+        
         // Exit with help message if they didn't provide enough arguments
         if (argc < 4) {
             std::cout << program_name << ": " << " Expected at least 3 arguments." << std::endl;
-            std::cout << options.help();
+            std::cout << options.help({""});
             return FAILURE;
         }
 
