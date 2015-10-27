@@ -36,14 +36,13 @@ Algorithm::~Algorithm() {
  */
 int Algorithm::runLKHSolver(std::string parFilename) {
     int result = FAILURE;
-    std::string cmd = "LKH ";
-    cmd += parFilename;
+    std::string shell_command = LKH_EXECUTABLE " " + parFilename;
 
 #if defined (__unix__) || (defined (__APPLE__) && defined (__MACH__))
     #include <errno.h>
     Logger::logDebug(DPP_LOGGER_VERBOSE_2) << "Running LKH Solver with popen(): "
-        << const_cast<char*>(cmd.c_str()) << std::endl;
-    FILE *pFile = popen(const_cast<char*>(cmd.c_str()), "r");
+        << const_cast<char*>(shell_command.c_str()) << std::endl;
+    FILE *pFile = popen(const_cast<char*>(shell_command.c_str()), "r");
     // Read through stdout until it ends
     // TODO add error checking/parsing here
     char buffer [100];
