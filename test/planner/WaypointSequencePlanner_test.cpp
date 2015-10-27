@@ -31,14 +31,17 @@ TEST (WaypointSequencePlanner, ConstructsCorrectly) {
     EXPECT_FALSE(p->containsWaypoint(0,0));
 
     // Turn radius specifiable
+    delete p;
     p = new dpp::WaypointSequencePlanner(TURN_RADIUS);
     EXPECT_EQ(TURN_RADIUS, p->turnRadius());
 
     // Initial heading specifiable
+    delete p;
     p = new dpp::WaypointSequencePlanner(TURN_RADIUS, INITIAL_HEADING);
     EXPECT_EQ(INITIAL_HEADING, p->initialHeading());
 
     // Algorithm specifiable
+    delete p;
     p = new dpp::WaypointSequencePlanner(TURN_RADIUS, INITIAL_HEADING);
     p->algorithm(PLANNING_ALGORITHM);
     EXPECT_EQ(PLANNING_ALGORITHM_NAME, p->algorithmName());
@@ -69,7 +72,7 @@ const vector<dpp::Waypoint> waypointList {
     {5.1*TURN_RADIUS, -3.3*TURN_RADIUS}
 };
 
-vector<int> waypointListSolutions {-1, 1, 2, 3};
+vector<int> waypointListSolutions {0, 1, 2};
 
 const vector<dpp::Waypoint> waypointList2 {
     {0, 0},
@@ -78,7 +81,7 @@ const vector<dpp::Waypoint> waypointList2 {
     {5.1*TURN_RADIUS, 0*TURN_RADIUS}
 };
 
-vector<int> waypointList2Solutions {-1, 1, 3, 2, 4};
+vector<int> waypointList2Solutions {0, 2, 1, 3};
 
 const dpp::Waypoint newWaypoint = {-15, -15};
 
@@ -94,6 +97,7 @@ public:
     virtual ~WaypointSequencePlannerTest() { }
 
     virtual void SetUp() {
+        //ENABLE_DEBUG_TEST();
         m_planner.initialHeading(INITIAL_HEADING);
         m_planner.turnRadius(TURN_RADIUS);
         m_planner.addWaypoints(waypointList);
@@ -107,13 +111,19 @@ public:
     }
 
     bool verifySolution(vector<int> solution) {
-        int oldIndex = 1;
-        for(const auto& newIndex : solution) {
-            if (newIndex < 0) continue; // skip first element
+        int oldIndex = 0;
+        for(const auto& expectedNewIndex : solution) {
+            //if (expectedNewIndex == 0) continue; // skip first element
+            int actualNewIndex = m_planner.newWaypointSequenceId(oldIndex);
 
-            if (newIndex != m_planner.newWaypointSequenceId(oldIndex++)) {
+            dpp::Logger::logDebug(DPP_LOGGER_VERBOSE_2) << "Comparing old_id="
+                << oldIndex << " for expected=" << expectedNewIndex << " == actual="
+                << actualNewIndex << std::endl;
+
+            if (expectedNewIndex != actualNewIndex) {
                 return false;
             }
+            oldIndex++;
         }
         return true;
     }
@@ -135,9 +145,10 @@ TEST_F(WaypointSequencePlannerTest, WaypointsAdded) {
 // Test for adding additional waypoints
 TEST_F(WaypointSequencePlannerTest, AddMoreWaypoints) {
     ASSERT_EQ(waypointList.size(), m_planner.waypointCount());
+    int expectedWaypointIndex = waypointList.size();
     int expectedWaypointCount = waypointList.size() + 1;
 
-    EXPECT_EQ(expectedWaypointCount, m_planner.addWaypoint(newWaypoint));
+    EXPECT_EQ(expectedWaypointIndex, m_planner.addWaypoint(newWaypoint));
     EXPECT_EQ(expectedWaypointCount, m_planner.waypointCount());
     EXPECT_TRUE(m_planner.containsWaypoint(newWaypoint));
 }
@@ -176,8 +187,6 @@ TEST_F(WaypointSequencePlannerTest, CorrectSolution) {
 
 // Test for solution to waypointList2
 TEST_F(WaypointSequencePlannerTest, CorrectSolution2) {
-    ENABLE_DEBUG_TEST();
-
     // Change the waqypoint list
     m_planner.addWaypoints(waypointList2);
     ASSERT_EQ(waypointList2.size(), m_planner.waypointCount());
@@ -188,7 +197,6 @@ TEST_F(WaypointSequencePlannerTest, CorrectSolution2) {
     EXPECT_TRUE(m_planner.haveSolution());
 
     EXPECT_TRUE(verifySolution(waypointList2Solutions));
-    DISABLE_DEBUG_TEST();
 }
 
 // Test for death with invalid old index
@@ -197,8 +205,8 @@ TEST_F(WaypointSequencePlannerTest, DeathWithBadIndex) {
     ASSERT_FALSE(m_planner.haveSolution());
     ASSERT_TRUE(m_planner.planWaypointSequence());
 
-    EXPECT_DEATH(m_planner.newWaypointSequenceId(0),
-        "Assertion failed: \\(oldIndex > 0 && oldIndex <= waypointCount\\(\\)\\).*");
+    EXPECT_DEATH(m_planner.newWaypointSequenceId(-1),
+        "Assertion failed: \\(oldIndex >= 0 && oldIndex <= waypointCount\\(\\)\\).*");
     EXPECT_DEATH(m_planner.newWaypointSequenceId(m_planner.waypointCount() + 1),
-        "Assertion failed: \\(oldIndex > 0 && oldIndex <= waypointCount\\(\\)\\).*");
+        "Assertion failed: \\(oldIndex >= 0 && oldIndex <= waypointCount\\(\\)\\).*");
 }
