@@ -33,23 +33,28 @@ public:
         return m_polygon;
     }
 
+    /// Set the sensor coverage width.
     void sensorWidth(double e) {
         m_sensorWidth = e;
     }
 
+    /// Get the sensor coverage width.
     double sensorWidth(void) {
         return m_sensorWidth;
     }
 
+    /// Get the initial vehicle configuration
     VehicleConfiguration initialConfiguration(void)  {
         return m_initialConfig;
     }
 
+    /// Set the initial vehicle configuration.
     void initialConfiguration(VehicleConfiguration C)  {
         m_initialConfig = C;
         m_initialHeading = m_initialConfig.heading();
     }
 
+    /// Override to update heading of vehicle config.
     void initialHeading(double x) {
         m_initialConfig.heading(x);
         m_initialHeading = x;

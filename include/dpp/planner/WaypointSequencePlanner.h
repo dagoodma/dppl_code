@@ -1,5 +1,5 @@
-#ifndef _DPP_DUBINS_VEHICLE_PATH_PLANNER_SIMPLE_H_
-#define _DPP_DUBINS_VEHICLE_PATH_PLANNER_SIMPLE_H_
+#ifndef _DPP_WAYPOINT_SEQUENCE_PLANNER_H_
+#define _DPP_WAYPOINT_SEQUENCE_PLANNER_H_
 
 #include <dpp/planner/DubinsVehiclePathPlanner.h>
 
@@ -70,4 +70,4 @@ private:
 
 } // dpp
 
-#endif // _SIMPLE
+#endif // _DPP_WAYPOINT_SEQUENCE_PLANNER_H_

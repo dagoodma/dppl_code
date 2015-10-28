@@ -19,6 +19,7 @@ add_library(DPP STATIC
     dpp/planner/DubinsVehiclePathPlanner.cpp
     dpp/planner/DubinsSensorPathPlanner.cpp
     dpp/planner/WaypointSequencePlanner.cpp
+    dpp/planner/CoverageWaypointPlanner.cpp
 )
 
 TARGET_LINK_LIBRARIES( DPP ${OGDF_LIBRARIES} )
