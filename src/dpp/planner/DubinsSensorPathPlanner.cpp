@@ -9,6 +9,7 @@
  */
 #include <dpp/planner/DubinsSensorPathPlanner.h>
 #include <dpp/basic/FileIO.h>
+#include <dpp/basic/Field.h>
 
 namespace dpp {
 
@@ -71,8 +72,10 @@ bool DubinsSensorPathPlanner::solveAsDtsp(DtspPlanningAlgorithm algId) {
         m_GA.y(nodeStart) = m_initialConfig.y();
         m_GA.idNode(nodeStart) = 1;
 
-        // Grid polygon by sensor width and build graph with centroids as nodes
-        int n = addNodesFromPolygonGrid(m_G, m_GA, m_polygon, m_sensorWidth);
+        // Construct field and grid polygon by sensor width,
+        // building a graph with centroids as nodes
+        Field field(m_polygon, m_sensorWidth);
+        int n = field.addNodesFromGrid(m_G, m_GA);
         Logger::logDebug(DPP_LOGGER_VERBOSE_1) << "Added " << n << " nodes "
             << "to the Graph." << std::endl;
 

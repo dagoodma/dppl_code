@@ -50,6 +50,14 @@ add_executable(Path_test basic/Path_test.cpp ../src/dpp/basic/Path.cpp)
 target_link_libraries(Path_test gmock_main OGDF COIN DPP DUBINSCURVES)
 add_test(BasicTests Path_test)
 
+# dpp/planalg/Field
+add_executable(Field_test basic/Field_test.cpp
+    ../src/dpp/basic/Field.cpp
+    ../src/dpp/basic/Path.cpp
+    ../src/dpp/basic/Logger.cpp)
+target_link_libraries(Field_test gmock_main OGDF COIN DPP)
+add_test(PlanalgTests Field_test)
+
 # dpp/planalg/RandomizedDtsp
 add_executable(RandomizedDtsp_test planalg/RandomizedDtsp_test.cpp
     ../src/dpp/planalg/RandomizedDtsp.cpp

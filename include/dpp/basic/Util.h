@@ -54,17 +54,25 @@ inline double radToDeg(double x) {
     return x * (180.0/M_PI);
 }
 
+/**
+ * Calculates the angle between two vectors.
+ * @remark This is technically not the same as heading between two vectors.
+ */
+inline double angleBetween(Vector2d v, Vector2d w) {
+    return acos((v.dot(w)) / (v.norm() * w.norm()));
+}
+
 
 /**
  * Find the 2D heading angle between the vectors. Heading angle is in radians, and
  * increases clockwise where 0 is the positive y-axis.
  * @note Could have used atan2(y,x)
  */
-inline double headingBetween(Vector2d u, Vector2d v) {
-    double x1 = u[0];
-    double x2 = v[0];
-    double y1 = u[1];
-    double y2 = v[1];
+inline double headingBetween(Vector2d v, Vector2d w) {
+    double x1 = v[0];
+    double x2 = w[0];
+    double y1 = v[1];
+    double y2 = w[1];
 
     double psi = 0.0;
 

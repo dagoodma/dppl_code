@@ -3,8 +3,6 @@
 
 #include <dpp/planalg/Algorithm.h>
 
-using ogdf::DPolygon;
-
 namespace dpp {
 
 /*
@@ -22,9 +20,6 @@ public:
     int run(void);
 
 };
-
-int addNodesFromPolygonGrid(Graph &G, GraphAttributes &GA, DPolygon &poly, double e);
-
 
 } // namespace dpp
 
