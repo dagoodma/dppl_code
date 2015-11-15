@@ -12,9 +12,18 @@
 #include <Eigen/Dense>
 
 #include <dpp/basic/basic.h>
+#include <dpp/basic/Logger.h>
 
 using Eigen::Vector3d;
 using Eigen::Vector2d;
+
+using ogdf::DPoint;
+using ogdf::DPolygon;
+using ogdf::DSegment;
+using ogdf::DLine;
+using ogdf::DIsEqual;
+
+// FIXME move this all to basic.h and basic.cpp, remove Util.h.
 
 namespace dpp {
 
@@ -27,17 +36,25 @@ inline double myMod(double x, double y) {
 }
 
 /**
- * Converts a heading angle x to a circular angle theta.
- */
-inline double headingToAngle(double x) {
-    return myMod(-(x - M_PI/2.0), 2.0 * M_PI);
-}
-
-/**
  * Wraps an angle to [0, 2*pi).
  */
 inline double wrapAngle(double x) {
     return myMod(x, 2.0*M_PI);
+}
+
+/**
+ * Converts a heading angle to a circular angle.
+ */
+inline double headingToAngle(double psi) {
+    return wrapAngle(-(psi - M_PI/2.0));
+}
+
+
+/**
+ * Converts a circular angle to a heading from North.
+ */
+inline double angleToHeading(double theta) {
+    return headingToAngle(theta); // same result both ways
 }
 
 /** 
@@ -55,26 +72,47 @@ inline double radToDeg(double x) {
 }
 
 /**
- * Calculates the angle between two vectors.
+ * Computes the angle between two vectors.
  * @remark This is technically not the same as heading between two vectors.
  */
 inline double angleBetween(Vector2d v, Vector2d w) {
     return acos((v.dot(w)) / (v.norm() * w.norm()));
 }
 
+/**
+ * Computes the angle of a DLine.
+ * @return Angle of the line from [0, 2*pi)
+ * @remark Angle is taken between the line and the positive x-axis in the
+ *   counter-clockwise direction.
+ */
+inline double angleOfLine(DLine l) {
+    return wrapAngle(atan2(l.dy(), l.dx()));
+}
 
 /**
- * Find the 2D heading angle between the vectors. Heading angle is in radians, and
- * increases clockwise where 0 is the positive y-axis.
- * @note Could have used atan2(y,x)
+ * Computes the angle of a DSegment.
  */
-inline double headingBetween(Vector2d v, Vector2d w) {
-    double x1 = v[0];
-    double x2 = w[0];
-    double y1 = v[1];
-    double y2 = w[1];
+inline double angleOfSegment(DSegment s) {
+    return angleOfLine(s);
+}
+
+/**
+ * Find the 2D heading angle between points on the plane. Heading angle is in
+ * radians, and it increases clockwise where 0 is the positive y-axis.
+ * @note Consider using atan2(y,x)
+ */
+inline double headingBetween(DPoint p, DPoint q) {
+    double x1 = p.m_x;
+    double x2 = q.m_x;
+    double y1 = p.m_y;
+    double y2 = q.m_y;
 
     double psi = 0.0;
+
+    // Identical points have no heading between them
+    if (p == q) {
+        return psi;
+    }
 
     // Check quadrant
     if (x1 <= x2 && y1 < y2) {
@@ -95,6 +133,14 @@ inline double headingBetween(Vector2d v, Vector2d w) {
 
     return psi;
 }
+
+/**
+ * Finds the heading angle between the points pointed at by vectors v and w.
+ */
+inline double headingBetween(Vector2d v, Vector2d w) {
+    return headingBetween(DPoint(v[0], v[1]), DPoint(w[0], w[1]));
+}
+
 /**
  * Calls the 2D version of the function with the same name by ignoring the 3rd
  * dimension.
@@ -303,6 +349,220 @@ inline std::string printHeadings(ogdf::Graph &G, ogdf::GraphAttributes &GA,
     }
 
     return sout.str();
+}
+
+/**
+ * Infinite line in normal form that uses DLine and has polar translation.
+ * @remark This is used for sweep-line algorithms in CPP.
+ */
+ // TODO look into Eigen::ParametrizedLine, esp. for higher dimensions
+class Line2d : private DLine
+{
+public:
+    using DLine::isVertical;
+    using DLine::isHorizontal;
+    using DLine::slope;
+
+    double m_a, m_b, m_c;
+
+    /**
+     * Construct the line from a Dline.
+     */
+    Line2d(DLine line)
+        : DLine(line)
+    {
+        DPoint p1 = start();
+        DPoint p2 = end();
+
+        if (!isVertical()) {
+            m_a = - (p2.m_y - p1.m_y)/(p2.m_x - p1.m_x);
+            m_b = 1;
+            m_c = p1.m_y + m_a*p1.m_x;
+        }
+        else {
+            m_a = p1.m_x;
+            m_b = 1;
+            m_c = std::numeric_limits<double>::max(); // inf
+        }
+    }
+
+    /**
+     * Copy constructor.
+     */
+    Line2d & operator= (const Line2d &line) {
+        if (this != &line) {
+            m_start = line.m_start;
+            m_end = line.m_end;
+            m_a = line.m_a;
+            m_b = line.m_b;
+            m_c = line.m_c;
+        }
+        return *this;
+    }
+
+
+    // Equality
+    bool operator== (const Line2d &line) const {
+        if (isVertical() && line.isVertical()) {
+            return DIsEqual(m_a, line.m_a);
+        }
+
+        return DIsEqual(m_a, line.m_a) && DIsEqual(m_b, line.m_b)
+            && DIsEqual(m_c, line.m_c);
+    }
+
+    // Not equals
+    bool operator!= (const Line2d &line) const {
+        return !(*this == line);
+    }
+
+    friend ostream& operator<<(ostream& os, const Line2d& line);
+
+    // Length of a line is infinite.
+    double length(void) {
+        return std::numeric_limits<double>::max();
+    }
+
+    /**
+     * Returns the angle of this line.
+     * @return Angle of the line, where 0 <= theta < pi
+     * @remark Different than the angle of a DLine, which has endpoints.
+     */
+     double angle(void) {
+        if (isVertical()) {
+            return M_PI/2; // slope is infinite
+        }
+
+        return myMod(atan(slope()), M_PI);
+     }
+
+    /**
+     * Returns true if the point lies on the line.
+     */
+    bool contains(DPoint p) {
+        if (!isVertical()) {
+            return DIsEqual(m_c, m_a * p.m_x + m_b * p.m_y);
+        }
+        else {
+            return DIsEqual(m_a, p.m_x);
+        }
+    }
+
+    /**
+     * Translates the line by polar coordinates (d, theta).
+     * @param d     Distance to translate in the direction of theta.
+     * @param theta Angle direction to translate the line in. Must satisfy 0 <= theta < 2pi
+     * @remark This does not rotate the line (no change in slope).
+     * @remark If theta is the angle of this line, translating has no effect.
+     */
+    void translatePolar(double d, double theta) {
+        DPP_ASSERT(0 <= theta && theta < 2*M_PI);
+
+        Logger::logDebug(DPP_LOGGER_VERBOSE_2) << "Translating line: " << this << " by "
+            << d << " at " << radToDeg(theta) << " degrees." << std::endl;
+
+        if (myMod(theta, M_PI) == angle()) {
+            Logger::logWarn(DPP_LOGGER_VERBOSE_1) << "Translating line by same angle as line."
+                << std::endl;
+        }
+
+        //theta = wrapAngle(theta);
+        double dx = 0, dy = 0;
+
+        if (theta <= M_PI/2) {
+            dx = d*cos(theta);
+            dy = d*sin(theta);
+        }
+        else if (theta <= M_PI) {
+            dx = -d*sin(theta - M_PI/2);
+            dy = d*cos(theta - M_PI/2);
+        }
+        else if (theta <= 3*M_PI/2) {
+            dx = -d*cos(theta - M_PI);
+            dy = -d*sin(theta - M_PI);
+        }
+        else {
+            dx = d*sin(theta - 3*M_PI/2);
+            dy = -d*cos(theta - 3*M_PI/2);
+        }
+
+        if (!isVertical()) {
+            m_c += dy + m_a*dx;
+        }
+        else {
+            m_a += dx;
+        }
+
+        Logger::logDebug(DPP_LOGGER_VERBOSE_2) << "New line: " << this << std::endl;
+    }
+
+    /**
+     * Find the point of intersection with another line.
+     * @param[in] line Another line to find intersection with.
+     * @param[out] inters Point to hold intersection of lines.
+     * @return True if they intersect and are not identical.
+     */
+    bool intersection(Line2d line, DPoint &inters) {
+        bool result = false;
+        // Will this work if either is infinite?
+        if (!DIsEqual(slope(), line.slope())) {
+            if (!isVertical() && !line.isVertical()) {
+                inters.m_x = (m_c * line.m_b - m_b * line.m_c)/(m_a * line.m_b - m_b * line.m_a);
+                inters.m_y = (m_a  * line.m_c - m_c * line.m_a)/(m_a *line.m_b - m_b * line.m_a);
+                result = true;
+            }
+            else if (!isVertical()) {
+                inters.m_x = line.m_a;
+                inters.m_y = (m_c - m_a * line.m_a)/m_b;
+                result = true;
+            }
+            else if (!line.isVertical()) {
+                inters.m_x = m_a;
+                inters.m_y = (line.m_c - line.m_a * m_a)/line.m_b;
+                result = true;
+            }
+        }
+
+        return result;
+    }
+
+    /**
+     * Find the point of intersection with a line segment.
+     * @param[in] s A line segment to find intersection with.
+     * @param[out] inters Point to hold intersection.
+     * @return True if line segment intersects this line, and the segment is not
+     *      completey on-top of this line (infinite intersections).
+     */
+    bool intersection(DSegment s, DPoint &inters) {
+        Line2d line(s);
+        DPoint p;
+        if (intersection(line, p)) {
+            double minX = min({s.start().m_x, s.end().m_x});
+            double maxX = max({s.start().m_x, s.end().m_x});
+            double minY = min({s.start().m_y, s.end().m_y});
+            double maxY = max({s.start().m_y, s.end().m_y});
+            if (p.m_x >= minX && p.m_x <= maxX
+                && p.m_y >= minY && p.m_y <= maxY) {
+                inters = p;
+                return true;
+            }
+        }
+        return false;
+    }
+
+private:
+}; // class Line2d
+
+
+inline ostream& operator<<(ostream& os, const Line2d& line) {
+    if (!line.isVertical()) {
+        os << line.m_a << "*x + " << line.m_b << "*y = " << line.m_c;
+    }
+    else {
+        os << "x = " << line.m_a;
+    }
+
+    return os;
 }
 
 

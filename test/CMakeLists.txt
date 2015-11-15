@@ -36,7 +36,7 @@ include_directories( ${CMAKE_SOURCE_DIR}/test )
 ################################
 
 # dpp/basic/Logger
-add_executable(Logger_test basic/Logger_test.cpp ../src/dpp/basic/Logger.cpp)
+add_executable(Logger_test basic/Logger_test.cpp)
 target_link_libraries(Logger_test gmock_main DPP )
 add_test(BasicTests Logger_test)
 
@@ -46,69 +46,37 @@ target_link_libraries(Util_test gmock_main OGDF COIN DPP )
 add_test(BasicTests Util_test)
 
 # dpp/basic/Path
-add_executable(Path_test basic/Path_test.cpp ../src/dpp/basic/Path.cpp)
+add_executable(Path_test basic/Path_test.cpp)
 target_link_libraries(Path_test gmock_main OGDF COIN DPP DUBINSCURVES)
 add_test(BasicTests Path_test)
 
 # dpp/planalg/Field
-add_executable(Field_test basic/Field_test.cpp
-    ../src/dpp/basic/Field.cpp
-    ../src/dpp/basic/Path.cpp
-    ../src/dpp/basic/Logger.cpp)
+add_executable(Field_test basic/Field_test.cpp)
 target_link_libraries(Field_test gmock_main OGDF COIN DPP)
 add_test(PlanalgTests Field_test)
 
 # dpp/planalg/RandomizedDtsp
-add_executable(RandomizedDtsp_test planalg/RandomizedDtsp_test.cpp
-    ../src/dpp/planalg/RandomizedDtsp.cpp
-    ../src/dpp/planalg/Algorithm.cpp
-    ../src/dpp/basic/Path.cpp
-    ../src/dpp/basic/Logger.cpp)
+add_executable(RandomizedDtsp_test planalg/RandomizedDtsp_test.cpp)
 target_link_libraries(RandomizedDtsp_test gmock_main OGDF COIN DPP)
 add_test(PlanalgTests RandomizedDtsp_test)
 
 # dpp/planalg/AlternatingDtsp
-add_executable(AlternatingDtsp_test planalg/AlternatingDtsp_test.cpp
-    ../src/dpp/planalg/AlternatingDtsp.cpp
-    ../src/dpp/planalg/Algorithm.cpp
-    ../src/dpp/basic/Path.cpp
-    ../src/dpp/basic/Logger.cpp)
+add_executable(AlternatingDtsp_test planalg/AlternatingDtsp_test.cpp)
 target_link_libraries(AlternatingDtsp_test gmock_main OGDF COIN DPP)
 add_test(PlanalgTests AlternatingDtsp_test)
 
 # dpp/planalg/NearestNeighborDtsp
-add_executable(NearestNeighborDtsp_test planalg/NearestNeighborDtsp_test.cpp
-    ../src/dpp/planalg/NearestNeighborDtsp.cpp
-    ../src/dpp/planalg/Algorithm.cpp
-    ../src/dpp/basic/Path.cpp
-    ../src/dpp/basic/Logger.cpp)
+add_executable(NearestNeighborDtsp_test planalg/NearestNeighborDtsp_test.cpp)
 target_link_libraries(NearestNeighborDtsp_test gmock_main OGDF COIN DPP)
 add_test(PlanalgTests NearestNeighborDtsp_test)
 
 # dpp/planner/DubinsVehiclePathPlanner
-add_executable(DubinsVehiclePathPlanner_test planner/DubinsVehiclePathPlanner_test.cpp
-    ../src/dpp/planner/DubinsVehiclePathPlanner.cpp
-    ../src/dpp/planner/PathPlanner.cpp
-    ../src/dpp/planalg/AlternatingDtsp.cpp
-    ../src/dpp/planalg/NearestNeighborDtsp.cpp
-    ../src/dpp/planalg/RandomizedDtsp.cpp
-    ../src/dpp/planalg/Algorithm.cpp
-    ../src/dpp/basic/Path.cpp
-    ../src/dpp/basic/Logger.cpp)
+add_executable(DubinsVehiclePathPlanner_test planner/DubinsVehiclePathPlanner_test.cpp)
 target_link_libraries(DubinsVehiclePathPlanner_test gmock_main OGDF COIN DPP)
 add_test(PlannerTests DubinsVehiclePathPlanner_test)
 
 # dpp/planner/WaypointSequencePlanner
-add_executable(WaypointSequencePlanner_test planner/WaypointSequencePlanner_test.cpp
-    ../src/dpp/planner/WaypointSequencePlanner.cpp
-    ../src/dpp/planner/DubinsVehiclePathPlanner.cpp
-    ../src/dpp/planner/PathPlanner.cpp
-    ../src/dpp/planalg/AlternatingDtsp.cpp
-    ../src/dpp/planalg/NearestNeighborDtsp.cpp
-    ../src/dpp/planalg/RandomizedDtsp.cpp
-    ../src/dpp/planalg/Algorithm.cpp
-    ../src/dpp/basic/Path.cpp
-    ../src/dpp/basic/Logger.cpp)
+add_executable(WaypointSequencePlanner_test planner/WaypointSequencePlanner_test.cpp)
 target_link_libraries(WaypointSequencePlanner_test gmock_main OGDF COIN DPP)
 add_test(PlannerTests WaypointSequencePlanner_test)
 
