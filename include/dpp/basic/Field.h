@@ -2,20 +2,21 @@
 #define _DPP_FIELD_H_
 
 #include <cmath>
+#include <limits>
 
 #include <dpp/basic/basic.h>
 #include <dpp/basic/Util.h>
-
-using ogdf::DPoint;
-using ogdf::DPolygon;
-using ogdf::DSegment;
+#include <dpp/basic/FieldTrack.h>
 
 namespace dpp {
 
 #define DPP_FIELD_DEFAULT_COVERAGE_WIDTH  1
 
+typedef ogdf::List<FieldTrack>     FieldTrackList;
+
 typedef ogdf::List<DPoint>         PolyVertexList;
 typedef ogdf::ListIterator<DPoint> PolyVertexIterator;
+typedef ogdf::ListConstIterator<DPoint> PolyVertexConstIterator;
 
 class Field 
 {
@@ -67,32 +68,58 @@ public:
     PolyVertexIterator getVertexWithMaxY(void) {
         return m_maxYVertex;
     }
-
+/*
     DPolygon *polygon(void) {
         return &m_poly;
+    }
+*/
+    const DPolygon *polygon(void) const {
+        return const_cast<const DPolygon*>(&m_poly);
     }
 
     int findMinimumWidth(double &width, double &angle);
 
     int addNodesFromGrid(ogdf::Graph &G, ogdf::GraphAttributes &GA);
     
+    int generateFieldTracks(double angle, FieldTrackList &tracks);
+
+    friend ostream& operator<<(ostream& os, const Field& f);
+        
 private:
     DPolygon m_poly;
     double m_coverageWidth;
     PolyVertexIterator m_minXVertex, m_minYVertex, m_maxXVertex, m_maxYVertex;
-
     void computeBoundingBox(void);
    
 };
+
+inline ostream& operator<<(ostream& os, const Field& f) {
+    DPP_ASSERT(f.polygon()->size() > 0);
+    PolyVertexConstIterator iter;
+    for ( iter = f.polygon()->begin(); iter != f.polygon()->end(); iter++ ) {
+        os << "    " << *iter << std::endl;
+    }
+    return os;
+}
+
+/// Sweep-line used for generating field tracks. Field must be convex.
+class FieldTrackSweepLine : public Line2d
+{
+public:
+    FieldTrackSweepLine(DSegment s)
+        : Line2d(s)
+    { }
+
+    bool intersectingTrack(const Field *f, FieldTrack &t);
+
+private:
+};
+
 
 // Non-member functions related to Field
 // FIXME move to util?
 inline Vector2d segmentToVector(DSegment s) {
     return Vector2d(s.dx(), s.dy());
-}
-
-inline double angleOfSegment(DSegment s) {
-    return myMod(atan2(s.dy(), s.dx()),2 * M_PI);
 }
 
 /**
@@ -110,6 +137,7 @@ inline double distanceToCaliper(DPoint p, DPoint calPoint, Vector2d calVector) {
     return fabs(v.dot(r));
 }
 
+bool findPolySegmentWithAngle(double angle, const DPolygon *poly, DSegment &seg, bool dir=true);
 
 } // namespace dpp
 

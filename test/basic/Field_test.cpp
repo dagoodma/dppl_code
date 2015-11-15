@@ -232,7 +232,7 @@ TEST(FieldTest, MaximumYCoordinate) {
 TEST(FieldTest, AdvanceMinYIteratorWraps) {
 	dpp::Field m_field(nonConvexVertices);
 
-	dpp::PolyVertexIterator iter = m_field.getVertexWithMinY();
+	dpp::PolyVertexConstIterator iter = m_field.getVertexWithMinY();
 	iter = m_field.polygon()->cyclicSucc(iter);
 	iter = m_field.polygon()->cyclicSucc(iter);
 	iter = m_field.polygon()->cyclicSucc(iter);

@@ -11,7 +11,6 @@
  */
 
 #include <cmath>
-#include <limits>
 #include <cstddef>
 #include <iostream>
 #include <algorithm>
@@ -138,11 +137,8 @@ int Field::findMinimumWidth(double &width, double &angle) {
     PolyVertexIterator vb = m_maxYVertex; //findVertexWithMaxY();
 
     /*
-    Logger::logDebug(DPP_LOGGER_VERBOSE_2) << "Finding min width of polygon: " << std::endl;
-    PolyVertexIterator listIter;
-    for ( listIter = m_poly.begin(); listIter != m_poly.end(); listIter++ ) {
-        Logger::logDebug(DPP_LOGGER_VERBOSE_2) << "    " << *listIter << std::endl;
-    }
+    Logger::logDebug(DPP_LOGGER_VERBOSE_2) << "Finding min width of polygon: " << std::endl
+    	<< this << std::endl;
     */
     double rotAngle = 0;
     angle = 0;
@@ -224,6 +220,95 @@ int Field::findMinimumWidth(double &width, double &angle) {
     return SUCCESS;
 }
 
+/**
+ * Generates a list of parallel field tracks at the given angle.
+ * @remark Uses field's coverageWidth to space the tracks apart.
+ * @return Number of field tracks generated.
+ */
+int Field::generateFieldTracks(double angle, FieldTrackList &tracks) {
+	DPP_ASSERT(0 <= angle && angle < 2*M_PI);
+	tracks.clear();
+
+	// This is only used here for debugging
+	double polygonWidth;
+	double optimalCoverageAngle;
+	findMinimumWidth(polygonWidth, optimalCoverageAngle); 
+	if (!DIsEqual(angle, optimalCoverageAngle)) {
+		Logger::logWarn(DPP_LOGGER_VERBOSE_1)
+			<< "Field tracks are at non-optimal coverage angle "
+			<< radToDeg(optimalCoverageAngle) << " degrees." << std::endl;
+	}
+
+	// Find the sweep-line segment and angle
+	DSegment sweepSegment;
+	if (!findPolySegmentWithAngle(angle, polygon(), sweepSegment, false)) {
+    	throw std::runtime_error("Failed to find sweep segment.");
+	}
+	double sweepAngle = wrapAngle(angleOfSegment(sweepSegment) + M_PI/2);
+	FieldTrackSweepLine sweepLine(sweepSegment);
+	sweepLine.translatePolar(m_coverageWidth/2, sweepAngle); // shift the initial line
+	Logger::logDebug(DPP_LOGGER_VERBOSE_2) << "Initial sweep line: " << sweepLine
+		<< std::endl;
+
+	// Generate tracks to cover field
+	int nTurn = ceil(polygonWidth/m_coverageWidth);
+	Logger::logDebug(DPP_LOGGER_VERBOSE_1) << "Generating " << nTurn << " field tracks "
+		<< " at " << radToDeg(angle) << " degrees." << std::endl;
+	bool finished = false; // FIXME ensure no infinte looping
+	while (!finished) {
+		FieldTrack t;
+		if (sweepLine.intersectingTrack(this, t)) {
+			tracks.pushBack(t);
+			sweepLine.translatePolar(m_coverageWidth, sweepAngle);
+		}
+		else {
+			finished = true;
+		}
+	}
+
+	if (tracks.size() != nTurn) {
+		Logger::logWarn() << "Expected to find " << nTurn << " field tracks, but got "
+			<< tracks.size() << std::endl;
+	}
+
+	Logger::logDebug(DPP_LOGGER_VERBOSE_1) << "Generated " << tracks.size()
+		<< " field tracks." << std::endl;
+
+	return tracks.size();
+}
+
+/**
+ * Finds the first segment with the given angle in the polygon.
+ * @param[in] angle of segment to search for from [0, 2*pi)
+ * @param[in] poly  polygon to search over for segment
+ * @param[out] s    segment to hold result if found
+ * @param[in] dir    whether direction of segment should matter
+ * @remark If dir is false, the search angle and segment angle will be shifted to [0, pi)
+ * @returns true or false if the segment was found
+ */
+bool findPolySegmentWithAngle(double angle, const DPolygon *poly, DSegment &seg, bool dir) {
+    DPP_ASSERT(0 <= angle && angle < 2*M_PI);
+    DPP_ASSERT(poly->size() > 0);
+    bool result = false;
+
+    PolyVertexConstIterator iter;
+    for ( iter = poly->begin(); iter != poly->end(); iter++ ) {
+        DSegment s = poly->segment(iter);
+        double sAngle = angleOfSegment(s);
+        if (!dir && angle >= M_PI) 
+            angle = angle - M_PI;
+        if (!dir && sAngle >= M_PI) 
+            sAngle = sAngle - M_PI;
+
+        if (DIsEqual(angle, sAngle)) {
+            result = true;
+            seg = s;
+            break; // find the first segment
+        }
+    }
+    return result;
+}
+
 
 /**
  * Grids the polygon with squares of sensor width e, and then adds the grid tile
@@ -260,6 +345,47 @@ int Field::addNodesFromGrid(ogdf::Graph &G, ogdf::GraphAttributes &GA) {
 
 
     return i - 2; // subtract origin and extra i++
+}
+
+/**
+ * Create a field track by finding intersection of the sweep-line with the polygon.
+ * 
+ */
+bool FieldTrackSweepLine::intersectingTrack(const Field *f, FieldTrack &t) {
+	ogdf::List<DPoint> inter; // intersection points
+	int result = false;
+
+	Logger::logDebug(DPP_LOGGER_VERBOSE_2) << "Finding field track with sweep-line "
+		<< this << " on polygon: " << std::endl << *f << std::endl;
+
+	// Check for intersection with all segments
+    PolyVertexConstIterator iter;
+    for ( iter = f->polygon()->begin(); iter != f->polygon()->end(); iter++ ) {
+    	DSegment s = f->polygon()->segment(iter);
+    	DPoint ip;
+    	if (intersection(s, ip)) {
+    		inter.pushBack(ip);
+    		Logger::logDebug(DPP_LOGGER_VERBOSE_2) << "Found intersection point " << ip
+    			<< " with segment: " << s.start() << " -> " << s.end() << std::endl;
+    	}
+    }
+
+    // Handle intersection points
+    if (inter.size() == 1) {
+		Logger::logDebug(DPP_LOGGER_VERBOSE_2) << "Only one intersection point found." << std::endl;
+    }
+    else if (inter.size() == 2) {
+    	DSegment s(*(inter.get(0)), *(inter.get(1)));
+    	t = FieldTrack(s);
+    	result = true;
+    }
+    else if (inter.size() > 2) {
+    	throw std::domain_error("Expected polygon to be convex.");
+    }
+    else {
+		Logger::logDebug(DPP_LOGGER_VERBOSE_2) << "No intersection points found." << std::endl;
+    }
+    return result;
 }
 
 } // namespace dpp

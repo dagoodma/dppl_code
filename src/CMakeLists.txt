@@ -10,6 +10,7 @@ add_library(DPP STATIC
     dpp/basic/Logger.cpp
     dpp/basic/Path.cpp
     dpp/basic/Field.cpp
+    dpp/basic/FieldTrack.cpp
     dpp/basic/FileIO.cpp
     dpp/planalg/Algorithm.cpp
     dpp/planalg/RandomizedDtsp.cpp
