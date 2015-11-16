@@ -458,7 +458,7 @@ public:
     void translatePolar(double d, double theta) {
         DPP_ASSERT(0 <= theta && theta < 2*M_PI);
 
-        Logger::logDebug(DPP_LOGGER_VERBOSE_2) << "Translating line: " << this << " by "
+        Logger::logDebug(DPP_LOGGER_VERBOSE_2) << "Translating line: " << *this << " by "
             << d << " at " << radToDeg(theta) << " degrees." << std::endl;
 
         if (myMod(theta, M_PI) == angle()) {
@@ -493,7 +493,7 @@ public:
             m_a += dx;
         }
 
-        Logger::logDebug(DPP_LOGGER_VERBOSE_2) << "New line: " << this << std::endl;
+        Logger::logDebug(DPP_LOGGER_VERBOSE_2) << "New line: " << *this << std::endl;
     }
 
     /**

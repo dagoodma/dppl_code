@@ -36,6 +36,21 @@ public:
     {
 
     }
+
+    ~FieldTrack(void)
+    { }
+
+    // Equality only compares to see if endpoints are identical. start/end order donesn't matter
+    bool operator== (const FieldTrack &track) const {
+        return (start() == track.start() && end() == track.end())
+            || (end() == track.start() && start() == track.end());
+    }
+
+    // Not equals
+    bool operator!= (const FieldTrack &track) const {
+        return !(*this == track);
+    }
+
     /*
     DPoint endNode1(void) {
         return m_endNode1;
@@ -67,6 +82,9 @@ private:
     //ogdf::NodeSet m_endPointNodes;
     ogdf::node m_endNode1, m_endNode2;
 };
+
+    
+typedef ogdf::List<FieldTrack>     FieldTrackList;
 
 } // namespace dpp
 

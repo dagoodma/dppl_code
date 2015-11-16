@@ -12,8 +12,6 @@ namespace dpp {
 
 #define DPP_FIELD_DEFAULT_COVERAGE_WIDTH  1
 
-typedef ogdf::List<FieldTrack>     FieldTrackList;
-
 typedef ogdf::List<DPoint>         PolyVertexList;
 typedef ogdf::ListIterator<DPoint> PolyVertexIterator;
 typedef ogdf::ListConstIterator<DPoint> PolyVertexConstIterator;
@@ -81,7 +79,7 @@ public:
 
     int addNodesFromGrid(ogdf::Graph &G, ogdf::GraphAttributes &GA);
     
-    int generateFieldTracks(double angle, FieldTrackList &tracks);
+    int generateFieldTracks(FieldTrackList &tracks);
 
     friend ostream& operator<<(ostream& os, const Field& f);
         
@@ -110,7 +108,7 @@ public:
         : Line2d(s)
     { }
 
-    bool intersectingTrack(const Field *f, FieldTrack &t);
+    bool intersectingTrack(const Field *field, FieldTrack &track);
 
 private:
 };

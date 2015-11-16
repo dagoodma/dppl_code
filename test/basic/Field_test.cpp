@@ -13,9 +13,11 @@
 #include <dpp/basic/Logger.h>
 #include <dpp/basic/Util.h>
 #include <dpp/basic/Field.h>
+#include <dpp/basic/FieldTrack.h>
 
 #include "DubinsPathPlanner_test.h"
 
+using ogdf::DIsEqual;
 using ogdf::List;
 using ogdf::DPoint;
 using ogdf::DSegment;
@@ -122,6 +124,7 @@ List<DPoint> nonConvexVertices {
 };
 
 // ----- Test fixture --------
+// FIXME remote this, not needed
 /*
 
 using ::testing::Test;
@@ -249,7 +252,7 @@ TEST(FieldTest, MinimumWidthDiesForNonConvex) {
 	dpp::Field m_field(nonConvexVertices);
 	double width, angle;
 
-	EXPECT_DEATH(m_field.findMinimumWidth(width, angle),"");
+	EXPECT_DEATH(m_field.findMinimumWidth(width, angle),"isConvex\\(\\)");
 }
 
 // Test for findMinimumWidth() on convex polygons work
@@ -335,3 +338,208 @@ TEST(FieldTest, MinimumWidthOfIsoscelesTrapezoid) {
 
 // ---- Test for addNodesFromGrid() ----
 // TODO write tests for this
+
+
+// ----- Test for findPolySegmentWithAngle() ------
+TEST(FindPolySegmentWithAngleTest, AngleOutOfRangeDies) {
+	dpp::Field f(rightTriangleVertices);
+	const DPolygon *poly = f.polygon();
+	DSegment s;
+	{
+		double angle = 2*M_PI;
+		EXPECT_DEATH(dpp::findPolySegmentWithAngle(angle, poly, s),
+		 "0 <= angle && angle < 2\\*3\\.14159265358979323846264338327950288");
+	}
+	{
+		double angle = -M_PI/2;
+		EXPECT_DEATH(dpp::findPolySegmentWithAngle(angle, poly, s),
+		 "0 <= angle && angle < 2\\*3\\.14159265358979323846264338327950288");
+	}
+}
+
+TEST(FindPolySegmentWithAngleTest, EmptyPolygonDies) {
+	DPolygon poly;
+	DSegment s;
+	double angle = 0;
+	EXPECT_DEATH(dpp::findPolySegmentWithAngle(angle, &poly, s),
+		"poly->size\\(\\) > 0");
+}
+
+TEST(FindPolySegmentWithAngleTest, NoEdgeWithAngle) {
+	dpp::Field f(rightTriangleVertices);
+	const DPolygon *poly = f.polygon();
+	DSegment s;
+	double angle = M_PI;
+
+	EXPECT_FALSE(dpp::findPolySegmentWithAngle(angle, poly, s));
+}
+
+TEST(FindPolySegmentWithAngleTest, OneEdgeWithAngle) {
+	dpp::Field f(rightTriangleVertices);
+	const DPolygon *poly = f.polygon();
+	DSegment s;
+	double angle = 0;
+
+	DSegment expectedSegment(DPoint(-10,0), DPoint(0,0));
+	EXPECT_TRUE(dpp::findPolySegmentWithAngle(angle, poly, s));
+	EXPECT_TRUE(expectedSegment == s);
+}
+
+TEST(FindPolySegmentWithAngleTest, NoEdgeWithDirection) {
+	dpp::Field f(rightTriangleVertices);
+	const DPolygon *poly = f.polygon();
+	DSegment s;
+	double angle = dpp::degToRad(90);
+
+	EXPECT_FALSE(dpp::findPolySegmentWithAngle(angle, poly, s));
+}
+
+TEST(FindPolySegmentWithAngleTest, HasEdgeWithoutDirection) {
+	dpp::Field f(rightTriangleVertices);
+	const DPolygon *poly = f.polygon();
+	DSegment s;
+	double angle = dpp::degToRad(90);
+	DSegment expectedSegment(DPoint(-10,10), DPoint(-10,0));
+
+	EXPECT_TRUE(dpp::findPolySegmentWithAngle(angle, poly, s, false));
+	EXPECT_TRUE(expectedSegment == s);
+}
+
+
+// ----- Test for FieldTrackSweepLine::intersectingTrack() ------
+TEST(FieldTrackSweepLineTest, Constructs) {
+	dpp::Field f(rightTriangleVertices);
+	const DPolygon *poly = f.polygon();
+
+	DSegment s = poly->segment(poly->begin());
+	dpp::FieldTrackSweepLine sweepLine(s);
+
+	SUCCEED();
+}
+
+TEST(FieldTrackSweepLineTest, NoIntersectionOnEdge) {
+	dpp::Field f(rightTriangleVertices);
+	const DPolygon *poly = f.polygon();
+
+	DSegment s = poly->segment(poly->begin());
+	dpp::FieldTrackSweepLine sweepLine(s);
+	dpp::FieldTrack t;
+
+	EXPECT_FALSE(sweepLine.intersectingTrack(&f, t));
+}
+
+TEST(FieldTrackSweepLineTest, HasIntersection) {
+	dpp::Field f(rightTriangleVertices);
+	const DPolygon *poly = f.polygon();
+
+	DSegment s = poly->segment(poly->begin());
+	dpp::FieldTrackSweepLine sweepLine(s);
+	double sweepAngle = dpp::wrapAngle(sweepLine.angle() + M_PI/2);
+	sweepLine.translatePolar(f.coverageWidth()/2, sweepAngle);
+	dpp::FieldTrack actualT;
+	dpp::FieldTrack expectedT(DPoint(-10,9.292893219), DPoint(-0.7071067812,0));
+
+	EXPECT_TRUE(sweepLine.intersectingTrack(&f, actualT));
+	EXPECT_TRUE(expectedT == actualT);
+	/*
+	EXPECT_TRUE(expectedT.start() == actualT.start());
+	EXPECT_TRUE(expectedT.end() == actualT.end());
+	*/
+}
+
+// ----- Test for generateFieldTracks() ------
+
+
+TEST(FieldGenerateTracksTest, RightTriangle) {
+	dpp::Field f(rightTriangleVertices, 2);
+
+	dpp::FieldTrackList expectedTracks({
+		dpp::FieldTrack(DPoint(-10,8.585786438), DPoint(-1.414213562,0)),
+		dpp::FieldTrack(DPoint(-10,5.75735931), DPoint(-4.24264069,0)),
+		dpp::FieldTrack(DPoint(-10,2.92893219), DPoint(-7.07106781,0)),
+		dpp::FieldTrack(DPoint(-10,0.100505063), DPoint(-9.89949494,0))
+	});
+	dpp::FieldTrackList actualTracks;
+	f.generateFieldTracks(actualTracks);
+
+	EXPECT_TRUE(expectedTracks == actualTracks);
+}
+
+TEST(FieldGenerateTracksTest, IsoscelesTriangle) {
+	dpp::Field f(isoscelesTriangleVertices, 2);
+
+	dpp::FieldTrackList expectedTracks({
+		dpp::FieldTrack(DPoint(3,3), DPoint(5,3))
+	});
+	dpp::FieldTrackList actualTracks;
+	f.generateFieldTracks(actualTracks);
+
+	EXPECT_TRUE(expectedTracks == actualTracks);
+}
+
+TEST(FieldGenerateTracksTest, Square) {
+	dpp::Field f(squareVertices, 2);
+
+	dpp::FieldTrackList expectedTracks({
+		dpp::FieldTrack(DPoint(-10,-1), DPoint(0,-1)),
+		dpp::FieldTrack(DPoint(-10,-3), DPoint(0,-3)),
+		dpp::FieldTrack(DPoint(-10,-5), DPoint(0,-5)),
+		dpp::FieldTrack(DPoint(-10,-7), DPoint(0,-7)),
+		dpp::FieldTrack(DPoint(-10,-9), DPoint(0,-9))
+	});
+	dpp::FieldTrackList actualTracks;
+	f.generateFieldTracks(actualTracks);
+
+	EXPECT_TRUE(expectedTracks == actualTracks);
+}
+
+TEST(FieldGenerateTracksTest, Rectangle) {
+	dpp::Field f(rectangleVertices, 2);
+
+	dpp::FieldTrackList expectedTracks({
+		dpp::FieldTrack(DPoint(-9,0), DPoint(-9,-20)),
+		dpp::FieldTrack(DPoint(-7,0), DPoint(-7,-20)),
+		dpp::FieldTrack(DPoint(-5,0), DPoint(-5,-20)),
+		dpp::FieldTrack(DPoint(-3,0), DPoint(-3,-20)),
+		dpp::FieldTrack(DPoint(-1,0), DPoint(-1,-20))
+	});
+	dpp::FieldTrackList actualTracks;
+	f.generateFieldTracks(actualTracks);
+
+	EXPECT_TRUE(expectedTracks == actualTracks);
+}
+
+TEST(FieldGenerateTracksTest, Trapezoid) {
+	dpp::Field f(trapezoidVertices, 2);
+
+	dpp::FieldTrackList expectedTracks({
+		dpp::FieldTrack(DPoint(-9,9), DPoint(-9,-19)),
+		dpp::FieldTrack(DPoint(-7,7), DPoint(-7,-17)),
+		dpp::FieldTrack(DPoint(-5,5), DPoint(-5,-15)),
+		dpp::FieldTrack(DPoint(-3,3), DPoint(-3,-13)),
+		dpp::FieldTrack(DPoint(-1,1), DPoint(-1,-11))
+	});
+	dpp::FieldTrackList actualTracks;
+	f.generateFieldTracks(actualTracks);
+
+	EXPECT_TRUE(expectedTracks == actualTracks);
+}
+
+TEST(FieldGenerateTracksTest, IsoscelesTrapezoid) {
+	//ENABLE_DEBUG_TEST();
+	//std::cout << std::setprecision(10);
+	dpp::Field f(isoscelesTrapezoidVertices, 2);
+
+	dpp::FieldTrackList expectedTracks({
+		dpp::FieldTrack(DPoint(-9.833333333,11), DPoint(9.166666666,11)),
+		dpp::FieldTrack(DPoint(-9.5,9), DPoint(7.5,9)),
+		dpp::FieldTrack(DPoint(-9.166666666,7), DPoint(5.833333333,7)),
+		dpp::FieldTrack(DPoint(-8.833333333,5), DPoint(4.16666666,5)),
+		dpp::FieldTrack(DPoint(-8.5,3), DPoint(2.5,3)),
+		dpp::FieldTrack(DPoint(-8.166666666,1), DPoint(0.8333333,1))
+	});
+	dpp::FieldTrackList actualTracks;
+	f.generateFieldTracks(actualTracks);
+
+	EXPECT_TRUE(expectedTracks == actualTracks);
+}

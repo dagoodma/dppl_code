@@ -225,25 +225,30 @@ int Field::findMinimumWidth(double &width, double &angle) {
  * @remark Uses field's coverageWidth to space the tracks apart.
  * @return Number of field tracks generated.
  */
-int Field::generateFieldTracks(double angle, FieldTrackList &tracks) {
-	DPP_ASSERT(0 <= angle && angle < 2*M_PI);
+int Field::generateFieldTracks(FieldTrackList &tracks) {
+	//DPP_ASSERT(0 <= angle && angle < 2*M_PI);
 	tracks.clear();
 
-	// This is only used here for debugging
+	// FIXME remove this comment // This is only used here for debugging
 	double polygonWidth;
-	double optimalCoverageAngle;
-	findMinimumWidth(polygonWidth, optimalCoverageAngle); 
+	double coverageAngle;
+	findMinimumWidth(polygonWidth, coverageAngle); 
+	/*
 	if (!DIsEqual(angle, optimalCoverageAngle)) {
 		Logger::logWarn(DPP_LOGGER_VERBOSE_1)
 			<< "Field tracks are at non-optimal coverage angle "
 			<< radToDeg(optimalCoverageAngle) << " degrees." << std::endl;
 	}
+	*/
 
 	// Find the sweep-line segment and angle
+	// FIXME remove requirement to start with existing segment
 	DSegment sweepSegment;
-	if (!findPolySegmentWithAngle(angle, polygon(), sweepSegment, false)) {
+	if (!findPolySegmentWithAngle(coverageAngle, polygon(),
+		sweepSegment, false)) {
     	throw std::runtime_error("Failed to find sweep segment.");
 	}
+	//double sweepAngle = wrapAngle(angleOfSegment(sweepSegment) + M_PI/2);
 	double sweepAngle = wrapAngle(angleOfSegment(sweepSegment) + M_PI/2);
 	FieldTrackSweepLine sweepLine(sweepSegment);
 	sweepLine.translatePolar(m_coverageWidth/2, sweepAngle); // shift the initial line
@@ -253,7 +258,7 @@ int Field::generateFieldTracks(double angle, FieldTrackList &tracks) {
 	// Generate tracks to cover field
 	int nTurn = ceil(polygonWidth/m_coverageWidth);
 	Logger::logDebug(DPP_LOGGER_VERBOSE_1) << "Generating " << nTurn << " field tracks "
-		<< " at " << radToDeg(angle) << " degrees." << std::endl;
+		<< " at " << radToDeg(coverageAngle) << " degrees." << std::endl;
 	bool finished = false; // FIXME ensure no infinte looping
 	while (!finished) {
 		FieldTrack t;
@@ -348,41 +353,55 @@ int Field::addNodesFromGrid(ogdf::Graph &G, ogdf::GraphAttributes &GA) {
 }
 
 /**
- * Create a field track by finding intersection of the sweep-line with the polygon.
- * 
+ * Create a field track by finding two intersection points with the field.
+ * @param[in] f field to find intersections with
+ * @param[out] t
  */
-bool FieldTrackSweepLine::intersectingTrack(const Field *f, FieldTrack &t) {
+bool FieldTrackSweepLine::intersectingTrack(const Field *field, FieldTrack &track) {
 	ogdf::List<DPoint> inter; // intersection points
 	int result = false;
 
 	Logger::logDebug(DPP_LOGGER_VERBOSE_2) << "Finding field track with sweep-line "
-		<< this << " on polygon: " << std::endl << *f << std::endl;
+		<< *this << " on polygon: " << std::endl << *field << std::endl;
 
 	// Check for intersection with all segments
     PolyVertexConstIterator iter;
-    for ( iter = f->polygon()->begin(); iter != f->polygon()->end(); iter++ ) {
-    	DSegment s = f->polygon()->segment(iter);
+    bool onTopOf = false; // whether the sweep line lies on an edge segment
+    for ( iter = field->polygon()->begin(); iter != field->polygon()->end(); iter++ ) {
+    	DSegment s = field->polygon()->segment(iter);
     	DPoint ip;
     	if (intersection(s, ip)) {
     		inter.pushBack(ip);
     		Logger::logDebug(DPP_LOGGER_VERBOSE_2) << "Found intersection point " << ip
     			<< " with segment: " << s.start() << " -> " << s.end() << std::endl;
     	}
+    	// Check if on top of
+        Line2d line(s);
+        if (line == *this) {
+        	onTopOf = true;
+        }
     }
 
     // Handle intersection points
-    if (inter.size() == 1) {
+    if (onTopOf) {// We're at a vertex of the polygon
+		Logger::logDebug(DPP_LOGGER_VERBOSE_2) << "Collinear with edge segment." << std::endl;
+    }
+    else if (inter.size() == 1) {
+    	// We're at a vertex of the polygon
 		Logger::logDebug(DPP_LOGGER_VERBOSE_2) << "Only one intersection point found." << std::endl;
     }
     else if (inter.size() == 2) {
+    	// Found a cross-section of the polygon
     	DSegment s(*(inter.get(0)), *(inter.get(1)));
-    	t = FieldTrack(s);
+    	track = FieldTrack(s);
     	result = true;
     }
     else if (inter.size() > 2) {
+    	// Polygon is non-convex and or complex
     	throw std::domain_error("Expected polygon to be convex.");
     }
     else {
+    	// We're collinear with an edge, or not touching the polygon at all
 		Logger::logDebug(DPP_LOGGER_VERBOSE_2) << "No intersection points found." << std::endl;
     }
     return result;

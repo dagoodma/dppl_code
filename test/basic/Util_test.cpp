@@ -919,5 +919,143 @@ TEST(Line2dTranslateTest, TranslateLineZeroDistance) {
 }
 
 // Tests for intersction() with lines
+TEST(Line2dIntersectionTest, NoIntersectionVertical) {
+    dpp::Line2d line(DLine(DPoint(-2,-10), DPoint(-2,14)));
+    dpp::Line2d line2(DLine(DPoint(-5,10), DPoint(-5,14)));
+
+    DPoint p;
+    EXPECT_FALSE(line.intersection(line2,p));
+}
+
+TEST(Line2dIntersectionTest, NoIntersectionHorizontal) {
+    dpp::Line2d line(DLine(DPoint(-2,-10), DPoint(10,-10)));
+    dpp::Line2d line2(DLine(DPoint(2,10), DPoint(10,10)));
+
+    DPoint p;
+    EXPECT_FALSE(line.intersection(line2,p));
+}
+
+TEST(Line2dIntersectionTest, NoIntersectionIdentical) {
+    // Horizontal
+    {
+        dpp::Line2d line(DLine(DPoint(-2,10), DPoint(10,10)));
+        dpp::Line2d line2(DLine(DPoint(2,10), DPoint(10,10)));
+
+        DPoint p;
+        EXPECT_FALSE(line.intersection(line2,p));
+    }
+    // Vertical
+    {
+        dpp::Line2d line(DLine(DPoint(-5,-10), DPoint(-5,14)));
+        dpp::Line2d line2(DLine(DPoint(-5,10), DPoint(-5,14)));
+
+        DPoint p;
+        EXPECT_FALSE(line.intersection(line2,p));
+    }
+}
+
+TEST(Line2dIntersectionTest, HasIntersection) {
+    // Horizontal and vertical
+    {
+        dpp::Line2d line(DLine(DPoint(-2,10), DPoint(10,10)));
+        dpp::Line2d line2(DLine(DPoint(0,10), DPoint(0,15)));
+
+        DPoint expectedP(0,10);
+        DPoint actualP;
+        EXPECT_TRUE(line.intersection(line2,actualP));
+        EXPECT_TRUE(expectedP == actualP);
+    }
+    // Horizontal and regular
+    {
+        dpp::Line2d line(DLine(DPoint(-2,0), DPoint(10,0)));
+        dpp::Line2d line2(DLine(DPoint(0,0), DPoint(10,10)));
+
+        DPoint expectedP(0,0);
+        DPoint actualP;
+        EXPECT_TRUE(line.intersection(line2,actualP));
+        EXPECT_TRUE(expectedP == actualP);
+    }
+    // Vertical and regular
+    {
+        dpp::Line2d line(DLine(DPoint(0,10), DPoint(0,15)));
+        dpp::Line2d line2(DLine(DPoint(-1,10), DPoint(-5,14)));
+
+        DPoint expectedP(0,9);
+        DPoint actualP;
+        EXPECT_TRUE(line.intersection(line2,actualP));
+        EXPECT_TRUE(expectedP == actualP);
+    }
+}
 
 // Tests for intersction() with segments
+TEST(Line2dIntersectionTest, NoSegmentIntersection) {
+    // Horizontal segment
+    {
+        dpp::Line2d line(DLine(DPoint(0,10), DPoint(0,10)));
+        DSegment s(DLine(DPoint(2,10), DPoint(10,10)));
+
+        DPoint p;
+        EXPECT_FALSE(line.intersection(s,p));
+    }
+    // Vertical segment
+    {
+        dpp::Line2d line(DLine(DPoint(0,10), DPoint(0,10)));
+        DSegment s(DLine(DPoint(1,5), DPoint(1,10)));
+
+        DPoint p;
+        EXPECT_FALSE(line.intersection(s,p));
+    }
+}
+
+TEST(Line2dIntersectionTest, NoSegmentIntersectionOnTopOf) {
+    // Horizontal
+    {
+        dpp::Line2d line(DLine(DPoint(-2,10), DPoint(10,10)));
+        DSegment s(DLine(DPoint(-5,10), DPoint(-3,10)));
+
+        DPoint p;
+        EXPECT_FALSE(line.intersection(s,p));
+    }
+    // Vertical
+    {
+        dpp::Line2d line(DLine(DPoint(-2,10), DPoint(-2,15)));
+        DSegment s(DLine(DPoint(-2,3), DPoint(-2,10)));
+
+        DPoint p;
+        EXPECT_FALSE(line.intersection(s,p));
+    }
+}
+
+
+TEST(Line2dIntersectionTest, HasSegmentIntersection) {
+    // Horizontal
+    {
+        dpp::Line2d line(DLine(DPoint(0,0), DPoint(5,5)));
+        DSegment s(DLine(DPoint(-5,0), DPoint(5,0)));
+
+        DPoint expectedP(0,0);
+        DPoint actualP;
+        EXPECT_TRUE(line.intersection(s,actualP));
+        EXPECT_TRUE(expectedP == actualP);
+    }
+    // Vertical
+    {
+        dpp::Line2d line(DLine(DPoint(0,0), DPoint(5,5)));
+        DSegment s(DLine(DPoint(-2,-2), DPoint(-2,10)));
+
+        DPoint expectedP(-2,-2);
+        DPoint actualP;
+        EXPECT_TRUE(line.intersection(s,actualP));
+        EXPECT_TRUE(expectedP == actualP);
+    }
+    // Regular
+    {
+        dpp::Line2d line(DLine(DPoint(0,10), DPoint(0,15)));
+        DSegment s(DLine(DPoint(-1,-1), DPoint(1,1)));
+
+        DPoint expectedP(0,0);
+        DPoint actualP;
+        EXPECT_TRUE(line.intersection(s,actualP));
+        EXPECT_TRUE(expectedP == actualP);
+    }
+}
