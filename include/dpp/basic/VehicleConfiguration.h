@@ -33,7 +33,7 @@ public:
     VehicleConfiguration(double x, double y, double heading=0.0) {
         m_position.m_x = x;
         m_position.m_y = y;
-        m_heading = heading;
+        this->heading(heading); // for debug assertion on bounds
     }
 
     VehicleConfiguration(const VehicleConfiguration &C) {
@@ -42,9 +42,24 @@ public:
     }
 
     // Operator overloading
-    VehicleConfiguration & operator=(const VehicleConfiguration &C);
-    friend bool operator==(VehicleConfiguration &C1, VehicleConfiguration &C2);
-    friend bool operator!=(VehicleConfiguration &C1, VehicleConfiguration &C2);
+    /// Copy constructor
+    VehicleConfiguration & operator=(const VehicleConfiguration &C) {
+        if (C != *this) {
+            m_position = C.m_position;
+            m_heading = C.m_heading;
+        }
+        return *this;
+    }
+
+    bool operator==(const VehicleConfiguration &C) const {
+        return (m_position == C.m_position &&
+                m_heading == C.m_heading);
+    }
+
+    bool operator!=(VehicleConfiguration &C) const {
+        return !(*this == C);
+    }
+
     friend std::ostream & operator<<(std::ostream & stream, VehicleConfiguration const & v);
 
     // Accessors
@@ -99,23 +114,6 @@ public:
         return m_position.distance(C.m_position);
     }
 };
-
-inline VehicleConfiguration & VehicleConfiguration::operator=(const VehicleConfiguration &C) {
-    m_position = C.m_position;
-    m_heading = C.m_heading;
-
-    return *this;
-}
-
-inline bool operator==(VehicleConfiguration &C1, VehicleConfiguration &C2) {
-    return (C1.m_position.m_x == C2.m_position.m_x &&
-            C1.m_position.m_y == C2.m_position.m_y &&
-            C1.m_heading == C2.m_heading);
-}
-
-inline bool operator!=(VehicleConfiguration &C1, VehicleConfiguration &C2) {
-    return !(C1 == C2);
-}
 
 inline std::ostream & operator<<(std::ostream & stream, const VehicleConfiguration & v) {
     stream << "(" << v.m_position.m_x << ", " << v.m_position.m_y << ", " << v.m_heading << ")";

@@ -4,7 +4,7 @@
 #include <dpp/basic/VehicleConfiguration.h>
 #include <dpp/planner/PathPlanner.h>
 #include <dpp/planner/DubinsVehiclePathPlanner.h>
-#include <dpp/planalg/FieldTracksCpp.h>
+#include <dpp/planalg/BoustrophedonCpp.h>
 
 using ogdf::DPoint;
 using ogdf::DPolygon;
@@ -13,11 +13,11 @@ namespace dpp {
 
 class DubinsSensorPathPlanner : public DubinsPathPlanner {
 public:
-    enum CppPlanningAlgorithm { FIELD_TRACKS };
+    enum CppPlanningAlgorithm { BOUSTROPHEDON };
 
     DubinsSensorPathPlanner(double turnRadius=1.0, double sensorWidth=1.0)
         : m_sensorWidth(sensorWidth),
-        DubinsPathPlanner(turnRadius, new FieldTracksCpp)
+        DubinsPathPlanner(turnRadius, new BoustrophedonCpp)
     { }
 
     ~DubinsSensorPathPlanner()
@@ -53,6 +53,13 @@ public:
         m_initialConfig = C;
         m_initialHeading = m_initialConfig.heading();
     }
+
+    /// Set the initial vehicle configuration.
+    void initialConfiguration(double x, double y, double heading) {
+        VehicleConfiguration C(x, y, heading);
+        initialConfiguration(C);
+    }
+
 
     /// Override to update heading of vehicle config.
     void initialHeading(double x) {

@@ -33,7 +33,7 @@ Logger* Logger::Instance(void)
  * Deconstructor for log file. Closes file, and destructs ogdf::Logger.
  */
 Logger::~Logger() {
-    if (m_useFile) {
+    if (m_useFile && m_logFile.is_open()) {
         m_logFile.close();
     }
     m_pInstance = nullptr;
@@ -53,6 +53,9 @@ void Logger::initializeLogger(std::ostream &ostream) {
  */
 void Logger::initializeLogger(std::string logFilename) {
     Logger *log  = Logger::Instance();
+    if (log->m_logFile.is_open()) {
+        log->m_logFile.close();
+    }
     log->m_logFile.open(logFilename, std::fstream::out | std::fstream::trunc);
     log->m_useFile = true;
     initializeLogger(log->m_logFile);

@@ -16,7 +16,7 @@ add_library(DPP STATIC
     dpp/planalg/RandomizedDtsp.cpp
     dpp/planalg/NearestNeighborDtsp.cpp
     dpp/planalg/AlternatingDtsp.cpp
-    dpp/planalg/FieldTracksCpp.cpp
+    dpp/planalg/BoustrophedonCpp.cpp
     dpp/planner/PathPlanner.cpp
     dpp/planner/DubinsVehiclePathPlanner.cpp
     dpp/planner/DubinsSensorPathPlanner.cpp
@@ -24,7 +24,7 @@ add_library(DPP STATIC
     dpp/planner/CoverageWaypointPlanner.cpp
 )
 
-TARGET_LINK_LIBRARIES( DPP ${OGDF_LIBRARIES} )
+TARGET_LINK_LIBRARIES( DPP ${OGDF_LIBRARIES} DUBINSCURVES )
 
 ################################
 # Binaries
@@ -32,9 +32,13 @@ TARGET_LINK_LIBRARIES( DPP ${OGDF_LIBRARIES} )
 
 # Solve DTSP binary
 ADD_EXECUTABLE( solveDtsp solveDtsp.cpp )
-TARGET_LINK_LIBRARIES( solveDtsp ${OGDF_LIBRARIES} DPP )
+TARGET_LINK_LIBRARIES( solveDtsp ${OGDF_LIBRARIES} DPP DUBINSCURVES )
 
 # Solve CPP as DTSP binary
 ADD_EXECUTABLE( solveCppAsDtsp solveCppAsDtsp.cpp )
-TARGET_LINK_LIBRARIES( solveCppAsDtsp ${OGDF_LIBRARIES} DPP )
+TARGET_LINK_LIBRARIES( solveCppAsDtsp ${OGDF_LIBRARIES} DPP DUBINSCURVES )
+
+# Solve CPP binary
+ADD_EXECUTABLE( solveCpp solveCpp.cpp )
+TARGET_LINK_LIBRARIES( solveCpp ${OGDF_LIBRARIES} DPP DUBINSCURVES )
 

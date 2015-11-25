@@ -61,6 +61,13 @@ else()
 endif()
 
 ################################
+# Dubins-Curves Libraries
+################################
+
+link_directories( ${CMAKE_SOURCE_DIR}/lib/dubins-curves )
+include_directories( ${CMAKE_SOURCE_DIR}/lib/dubins-curves/include )
+
+################################
 # Eigen and others
 ################################
 # Header-only libraries are include only

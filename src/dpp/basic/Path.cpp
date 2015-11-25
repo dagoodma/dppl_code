@@ -12,6 +12,8 @@
 
 #include <Eigen/Dense>
 
+#include <DubinsCurves.h>
+
 #include <dpp/basic/basic.h>
 #include <dpp/basic/Logger.h>
 #include <dpp/basic/Path.h>
@@ -29,8 +31,11 @@ namespace dpp {
  * Calculate the shortest Dubins' path distance to the node. Note that all angles
  * used in this function are heading angles from 0 at the y-axis, and
  * counter-clockwise is positive. 
+ * @FIXME Add RLR and LRL curves. Does this fix dist > 3*r?
  */
-double dubinsPathLength(VehicleConfiguration &Cs, VehicleConfiguration &Ce, double r) {
+double dubinsPathLength(VehicleConfiguration &Cs, VehicleConfiguration &Ce,
+    double turnRadius) {
+    double r = turnRadius; // shorter name
     Vector2d Ps = Vector2d(Cs.x(), Cs.y()),
         Pe = Vector2d(Ce.x(), Ce.y());
     double Xs = Cs.m_heading,
@@ -40,23 +45,43 @@ double dubinsPathLength(VehicleConfiguration &Cs, VehicleConfiguration &Ce, doub
     Logger::logDebug(DPP_LOGGER_VERBOSE_3) << "Given Cs=" << Cs << ", Ce=" << Ce << ", r=" << r << std::endl;
     Logger::logDebug(DPP_LOGGER_VERBOSE_3) << "Got dist=" << dist << " compared to r=" << r << "." << std::endl;
 
-    //DPP_ASSERT(dist >= 3.0 * r);
-    // FIXME: return an unfeasible path macro, eg -1
-    if (dist < 3.0 * r) {
-        return DPP_MAX_EDGE_COST;
-    }
-    //if (dist < 3.0 * r) {
-    //  std::domain_error("distance must be larger than 3*r");
-    //}
 
     // Added tolerance to avoid numerical instability for paths with no curviture
     // TODO compute curviture as ratio w.r.t. turn radius?
+    // FIXME this does not take into account the feasability of the path! 
+    //        Should add an isReachable( func)
     if (fabs(Xs - Xe) <= HEADING_TOLERANCE) {
         Logger::logDebug(DPP_LOGGER_VERBOSE_3) << "Using straight line L=" << (Pe - Ps).norm() << ". |Xs - Xe| = "
             << fabs(Xs - Xe) << " <= " << HEADING_TOLERANCE << std::endl;
         return (Pe - Ps).norm();
     }
 
+    //DPP_ASSERT(dist >= 3.0 * r);
+    // FIXME: return an unfeasible path macro, eg -1
+    // FIXME: improve this function so that we don't have to use the dubins-curves library
+    //         this is needed for boustrophedon algorithm which does not care if the
+    //         point dist is >= 3.0 * r
+    // note: Detect if the final heading is close to the opposite of the initial,
+    //       to allow for implementing CCC-type paths (ie. U-turns) via Dubins
+    //       Corollarry to theorem 1. Though this may not satisfy all cases where 
+    //       no feasible paths exist. "U-turn" is either: {RLR or LRL}?
+    if (dist < 3.0 * r) {
+        //return DPP_MAX_EDGE_COST;
+        double *q0, *q1;
+        Cs.asArray(&q0);
+        Ce.asArray(&q1);
+        q0[2] = dpp::headingToAngle(q0[2]);
+        q1[2] = dpp::headingToAngle(q1[2]);
+        DubinsCurves::DubinsPath path;
+        DubinsCurves::dubins_init( q0, q1, turnRadius, &path);
+        double expectedLength = DubinsCurves::dubins_path_length(&path);
+        return expectedLength;
+    }
+    //if (dist < 3.0 * r) {
+    //  std::domain_error("distance must be larger than 3*r");
+    //}
+
+    // Convert headings to circular angles
     double alpha = headingToAngle(Xs),
            beta = headingToAngle(Xe);
 
@@ -132,26 +157,32 @@ double dubinsPathLength(VehicleConfiguration &Cs, VehicleConfiguration &Ce, doub
 }
 
 /**
- * Finds the cost of the shortest dubins path through the given tour using the
- * headings X. If returnCost is true, the cost of returning back to the first
- * node in the tour will be included.
+ * Finds the cost of the shortest dubins path over the given tour with headings.
+ * If returnCost is true, the cost of returning back to the first node in the
+ * tour will be included.
+ * @param[in] G graph with nodes to tour
+ * @param[in] GA attributes of the graph
+ * @param[in] Tour ordered list of nodes to visit
+ * @param[in] Headings for vehicle at each node
+ * @param[in] turnRadius of the vehicle
+ * @param[in] returnEdge whether to add a return edge back to the first node
  */
 double dubinsTourCost(ogdf::Graph &G, ogdf::GraphAttributes &GA,
-    ogdf::List<ogdf::node> &tour, ogdf::NodeArray<double> &X,
-    double r, bool returnCost) {
+    ogdf::List<ogdf::node> &Tour, ogdf::NodeArray<double> &Headings,
+    double turnRadius, bool returnCost) {
     ogdf::ListIterator<ogdf::node> iter;
     double cost = 0.0;
 
-    if (tour.size() < 2) {
+    if (Tour.size() < 2) {
         Logger::logWarn(DPP_LOGGER_VERBOSE_1) << "Zero cost for an empty tour." << std::endl;
         return 0.0;
     }
 
     // Add the return edge if necessary
-    ogdf::List<ogdf::node> modTour(tour);
+    ogdf::List<ogdf::node> modTour(Tour);
     ogdf::node lastNode = modTour.back();
     if (returnCost && lastNode != *(modTour.begin())) {
-        modTour.pushBack(*(tour.begin()));
+        modTour.pushBack(*(Tour.begin()));
     }
     else if (!returnCost && lastNode == *(modTour.begin())) {
         modTour.popBack();
@@ -162,15 +193,15 @@ double dubinsTourCost(ogdf::Graph &G, ogdf::GraphAttributes &GA,
     for ( iter = modTour.begin(); (i < m && iter != modTour.end()); iter++ ) {
         ogdf::node u = *iter, v = *(iter.succ());
 
-        VehicleConfiguration Cu(GA.x(u), GA.y(u), X(u)),
-                      Cv(GA.x(v), GA.y(v), X(v));
-        cost += dubinsPathLength(Cu, Cv, r);
+        VehicleConfiguration Cu(GA.x(u), GA.y(u), Headings(u)),
+                      Cv(GA.x(v), GA.y(v), Headings(v));
+        cost += dubinsPathLength(Cu, Cv, turnRadius);
         i++;
        
         Logger::logDebug(DPP_LOGGER_VERBOSE_3) << "Found cost " << cost << " from node "
             << GA.idNode(u) << "->" << GA.idNode(v) << ", where headings "
-            << GA.idNode(u) << ": " << X(u) << ", " << GA.idNode(v) << ": "
-            << X(v) << std::endl;
+            << GA.idNode(u) << ": " << Headings(u) << ", " << GA.idNode(v) << ": "
+            << Headings(v) << std::endl;
     }
     Logger::logDebug(DPP_LOGGER_VERBOSE_2) << "Found total cost "
     << cost << " for tour." << std::endl;
@@ -178,28 +209,34 @@ double dubinsTourCost(ogdf::Graph &G, ogdf::GraphAttributes &GA,
     return cost;
 }
 
-
 /**
- * Adds edges to the graph with the cost of a Dubins tour. Returns the cost of
- * the shortest dubins path through the given tour. If returnEdge is true, the
- * return edge is added. Edges created are saved into the list of edges.
+ * Adds weighted edges to the graph with the cost of the shortest dubins path
+ * between each node in the tour. If returnEdge is true, an edge returning to the
+ * origin is added. Added edges are saved into the list of edges.
+ * @param[in] G graph with nodes to tour
+ * @param[in] GA attributes of the graph
+ * @param[in] Tour ordered list of nodes to visit
+ * @param[in] Headings for vehicle at each node
+ * @param[in] turnRadius of the vehicle
+ * @param[out] Edges ordered list of edges to build
+ * @param[in] returnEdge whether to add a return edge back to the first node
  */
 double createDubinsTourEdges(ogdf::Graph &G, ogdf::GraphAttributes &GA,
-    ogdf::List<ogdf::node> &tour, ogdf::NodeArray<double> &X,
-    double r, ogdf::List<ogdf::edge> &edges, bool returnEdge) {
+    ogdf::List<ogdf::node> &Tour, ogdf::NodeArray<double> &Headings,
+    double turnRadius, ogdf::List<ogdf::edge> &Edges, bool returnEdge) {
     ogdf::ListIterator<ogdf::node> iter;
     double total_cost = 0.0;
 
-    if (tour.size() < 2) return 0.0;
+    if (Tour.size() < 2) return 0.0;
     DPP_ASSERT(G.numberOfEdges() < 1);
     //    std::range_error("Cannot have existing edges in graph");
     //}
 
     // Add the return edge if necessary
-    ogdf::List<ogdf::node> modTour(tour);
+    ogdf::List<ogdf::node> modTour(Tour);
     ogdf::node lastNode = modTour.back();
     if (returnEdge && lastNode != *(modTour.begin())) {
-        modTour.pushBack(*(tour.begin()));
+        modTour.pushBack(*(Tour.begin()));
     }
     else if (!returnEdge && lastNode == *(modTour.begin())) {
         modTour.popBack();
@@ -210,27 +247,27 @@ double createDubinsTourEdges(ogdf::Graph &G, ogdf::GraphAttributes &GA,
     for ( iter = modTour.begin(); (i < m && iter != modTour.end()); iter++ ) {
         ogdf::node u = *iter, v = *(iter.succ());
 
-        VehicleConfiguration Cu(GA.x(u), GA.y(u), X(u)),
-                      Cv(GA.x(v), GA.y(v), X(v));
-        double cost = dubinsPathLength(Cu, Cv, r);
+        VehicleConfiguration Cu(GA.x(u), GA.y(u), Headings(u)),
+                      Cv(GA.x(v), GA.y(v), Headings(v));
+        double cost = dubinsPathLength(Cu, Cv, turnRadius);
 
         Logger::logDebug(DPP_LOGGER_VERBOSE_3) << "Found cost " << cost << " from node "
             << GA.idNode(u) << "->" << GA.idNode(v) << ", where headings "
-            << GA.idNode(u) << ": " << X(u) << ", " << GA.idNode(v) << ": "
-            << X(v) << std::endl;
+            << GA.idNode(u) << ": " << Headings(u) << ", " << GA.idNode(v) << ": "
+            << Headings(v) << std::endl;
         //printf("Found cost %0.1f from node %d->%d, where headings %d: %0.1f, %d: %0.1f\n",
-        //    cost, GA.idNode(u), GA.idNode(v), GA.idNode(u), X(u), GA.idNode(v), X(v));
+        //    cost, GA.idNode(u), GA.idNode(v), GA.idNode(u), Headings(u), GA.idNode(v), Headings(v));
 
         // Add the edge
         ogdf::edge e = G.newEdge(u,v);
         GA.doubleWeight(e) = cost;
-        edges.pushBack(e);
+        Edges.pushBack(e);
         total_cost += cost;
         i++;
     }
     Logger::logDebug(DPP_LOGGER_VERBOSE_2) << "Created tour edges with total cost "
     << total_cost << ": " << std::endl;
-    Logger::logDebug(DPP_LOGGER_VERBOSE_2) << printEdges(G, GA, edges);
+    Logger::logDebug(DPP_LOGGER_VERBOSE_2) << printEdges(G, GA, Edges);
 
     return total_cost;
 }
@@ -242,18 +279,18 @@ double createDubinsTourEdges(ogdf::Graph &G, ogdf::GraphAttributes &GA,
  * given headings (for ATSP).
  */
 void buildDubinsAdjacencyMatrix(ogdf::Graph &G, ogdf::GraphAttributes &GA, 
-    NodeMatrix<double> &A, ogdf::NodeArray<double> &X, double turnRadius) {
+    NodeMatrix<double> &A, ogdf::NodeArray<double> &Headings, double turnRadius) {
   
     ogdf::node i, j;
     forall_nodes(i, G) {
-        VehicleConfiguration Ci(GA.x(i), GA.y(i), X(i));
+        VehicleConfiguration Ci(GA.x(i), GA.y(i), Headings(i));
 
         forall_nodes(j, G) {
             if (i == j) {
                 A[i][i] = DPP_MAX_EDGE_COST;
                 continue;
             }
-            VehicleConfiguration Cj(GA.x(j), GA.y(j), X(j));
+            VehicleConfiguration Cj(GA.x(j), GA.y(j), Headings(j));
             
             double w = dubinsPathLength(Ci, Cj, turnRadius);
             A[i][j] = w;

@@ -47,6 +47,9 @@ bool DubinsVehiclePathPlanner::solve(void) {
     DPP_ASSERT(waypointCount() > 1);
     m_haveSolution = false;
 
+    // Set the initial heading
+    m_Headings(m_G.firstNode()) = m_initialHeading;
+
     Logger::logInfo(DPP_LOGGER_VERBOSE_1) << "Solving " << waypointCount() << " node problem with "
         << m_algorithm->name() << " " << m_algorithm->typeText() << " algorithm." << std::endl;
     try {

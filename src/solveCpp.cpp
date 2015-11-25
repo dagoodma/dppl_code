@@ -1,6 +1,6 @@
 /*
  * DubinsPathPlanner tool for solving the Coverage Path Planning for a sensor-equipped
- * Dubins vehicle, using the Dubins Traveling Salesperson problem.
+ * Dubins vehicle.
  *
  * Copyright (C) 2014-2015 DubinsPathPlanner.
  * Created by David Goodman <dagoodma@gmail.com>
@@ -12,14 +12,13 @@
 #include <cxxopts.hpp>
 #include <stacktrace.h>
 
-#include <solveCppAsDtsp.h>
+#include <solveCpp.h>
 
 #include <dpp/basic/Logger.h>
 #include <dpp/basic/Util.h>
-#include <dpp/planner/DubinsSensorPathPlanner.h>
 
 /** 
- * Solve a CPP scenario by converting the problem to a Dtsp.
+ * Solve a CPP scenario.
  * @param poly  Polygon to cover.
  * @param C     Vehicle starting configuration.
  * @param G     An empty graph to hold the solution.
@@ -30,23 +29,24 @@
  * @param Edges List of edges to hold result
  * @param Headings Node array of headings to hold result
  * @param returnToInitial Return to the initial configuration at the end of tour.
- * @param algId Algorithm for solving Dtsp. See dpp::DubinsVehiclePathPlanner::DtspPlanningAlgorithm
+ * @param algId Algorithm for solving CPP.
  * @return Success or failure
  */
- int solveCppAsDtsp(ogdf::DPolygon poly, dpp::VehicleConfiguration C, ogdf::Graph &G,
+ int solveCpp(ogdf::DPolygon poly, dpp::VehicleConfiguration C, ogdf::Graph &G,
     ogdf::GraphAttributes &GA, double r, double e, ogdf::List<ogdf::node> &Tour,
     ogdf::List<ogdf::edge> &Edges, NodeArray<double> &Headings, double &cost,
-    bool returnToInitial, dpp::DtspPlanningAlgorithm algId) {
+    bool returnToInitial, dpp::CppPlanningAlgorithm algId) {
     DPP_ASSERT(G.empty());
 
     dpp::DubinsSensorPathPlanner p;
+    p.algorithm(algId);
     p.polygon(poly);
     p.initialConfiguration(C);
     p.turnRadius(r);
     p.sensorWidth(e);
-    p.returnToInitial(returnToInitial);
+    p.returnToInitial(returnToInitial); // FIXME not used in coverage so far
 
-    if (!p.solveAsDtsp(algId)) {
+    if (!p.solve()) {
         return FAILURE;
     }
 
@@ -60,7 +60,7 @@
  * The solution is a tour, which is an ordered list of waypoints,
  * saved inside a TSPlib file. The total cost, and edges are printed.
  * 
- * usage: solveCppAsDtsp [OPTIONS] <inputGMLFile> <startX> <startY> <startHeading> <turnRadius> <sensorWidth>
+ * usage: solveCpp [OPTIONS] <inputGMLFile> <startX> <startY> <startHeading> <turnRadius> <sensorWidth>
  * @param inputGMLFile  input GML file to read the polygon vertices from
  * @param startX        Starting x position. 
  * @param startY        Starting y position.
@@ -74,13 +74,12 @@
  *     Enables debug mode in logging module for extra information.
  * -h, --help
  *     Prints a help message and exits.
- * -a, --dtspalgorithm=<DtspPlanningAlgorithmName>
- *     Sets the planning algorithm ("nearest", "alternating", "randomized").
+ * -a, --cppalgorithm=<CpplanningAlgorithmName>
+ *     Sets the planning algorithm ("boustrophedon").
  * -r,--return
  *     Whether to return to initial configuration.
  */
 int main(int argc, char *argv[]) {
-
     // Setup stack traces for debugging
     char const *program_name = argv[0];
     #ifdef DPP_DEBUG
@@ -98,7 +97,7 @@ int main(int argc, char *argv[]) {
 
     dpp::DubinsSensorPathPlanner p;
 
-    dpp::DtspPlanningAlgorithm algId; // set below
+    dpp::CppPlanningAlgorithm algId; // set below
 
     // Option parsing
     cxxopts::Options options(program_name,
@@ -107,8 +106,8 @@ int main(int argc, char *argv[]) {
         options.add_options()
             ("d,debug", "Enable debugging messages",cxxopts::value<bool>(debug))
             ("h,help", "Print this message")
-            ("a,dtspalgorithm", "Algorithm for DTSP (nearest,alternating,randomized =default)",
-                cxxopts::value<std::string>()->default_value("alternating"), "DTSP_ALGORITHM")
+            ("a,cppalgorithm", "Algorithm for CPP (boustrophedon =default)",
+                cxxopts::value<std::string>()->default_value("boustrophedon"), "CPP_ALGORITHM")
             ("r,noreturn", "Disables returning to initial configuration", cxxopts::value<bool>(noReturn))
             ("v,verbose", "Prints increasingly verbose messages", cxxopts::value<int>(verbose));
 
@@ -157,19 +156,13 @@ int main(int argc, char *argv[]) {
         }
 
         // Set desired algorithm
-        if (options.count("dtspalgorithm")) {
-            std::string algName = options["dtspalgorithm"].as<std::string>();
-            if (algName.compare("nearest") == 0) {
-                algId = dpp::DtspPlanningAlgorithm::NEAREST_NEIGHBOR;
-            }
-            else if (algName.compare("alternating") == 0) {
-                algId = dpp::DtspPlanningAlgorithm::ALTERNATING;
-            }
-            else if (algName.compare("randomized") == 0) {
-                algId = dpp::DtspPlanningAlgorithm::RANDOMIZED;
+        if (options.count("cppalgorithm")) {
+            std::string algName = options["cppalgorithm"].as<std::string>();
+            if (algName.compare("boustrophedon") == 0) {
+                algId = dpp::CppPlanningAlgorithm::BOUSTROPHEDON;
             }
             else {
-                std::cout << program_name << ": " << "Invalid DTSP algorithm \'" << algName << "\'." << std::endl;
+                std::cout << program_name << ": " << "Invalid CPP algorithm \'" << algName << "\'." << std::endl;
                 std::cout << options.help();
                 return FAILURE;
                 //exit(1);
@@ -184,7 +177,7 @@ int main(int argc, char *argv[]) {
         }
 
     } catch (const cxxopts::OptionException& e) {
-        std::cout << program_name << " error parsing options: " << e.what() << std::endl;
+        std::cerr << program_name << " error parsing options: " << e.what() << std::endl;
         return FAILURE;
     } // try
 
@@ -194,6 +187,7 @@ int main(int argc, char *argv[]) {
     p.turnRadius(r);
     p.sensorWidth(e);
     p.returnToInitial(!noReturn);
+    p.algorithm(algId);
 
     if (!p.solve()) {
         std::cerr << "Failed to find solution." << std::endl;
@@ -211,8 +205,10 @@ int main(int argc, char *argv[]) {
     // Print headings and edge list
     ogdf::node u;
     std::cout << "Solved " << G->numberOfNodes() << " point tour with cost " << cost << "." << std::endl;
+    std::cout << dpp::printGraph(*G, GA);
     std::cout << dpp::printHeadings(*G, GA, Headings);
     std::cout << dpp::printEdges(*G, GA, E);
+    std::cout << dpp::printTour(*G, GA, Tour);
 
     return SUCCESS;
 }

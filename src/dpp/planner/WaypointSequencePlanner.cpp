@@ -26,6 +26,7 @@ void WaypointSequencePlanner::addWaypoints(const WaypointList list) {
     m_G.clear();
     m_originalNodeList.clear();
     m_newNodeList.clear();
+    m_haveSolution = false;
 
     int i;
     Logger::logDebug(DPP_LOGGER_VERBOSE_2) << "Adding list of waypoints: " << std::endl;

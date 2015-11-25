@@ -1,5 +1,5 @@
 /*
- * Implementation of DPP::NearestNeighbor class for solving Dtsp problems
+ * Implementation of DPP::NearestNeighbor class for solving DTSP problems
  * with the nearest neighbor algorithm.
  *
  * Copyright (C) 2014-2015 DubinsPathPlanner.
@@ -91,7 +91,6 @@ int NearestNeighborDtsp::run(Graph &G, GraphAttributes &GA, double x, double r,
     // Remove the first node (add return edge afterwards)
     GC.delNode(GC.copy(nodeStart));
     Tour.pushBack(nodeStart);
-    Headings(nodeStart) = x;
     Logger::logDebug(DPP_LOGGER_VERBOSE_2) << printGraph(G,GA) << std::endl;
 
     Logger::logDebug(DPP_LOGGER_VERBOSE_1)

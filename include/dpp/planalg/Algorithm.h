@@ -6,6 +6,9 @@
 
 #include <dpp/basic/basic.h>
 #include <dpp/basic/Logger.h>
+#include <dpp/basic/Field.h>
+#include <dpp/basic/VehicleConfiguration.h>
+#include <dpp/basic/Util.h>
 
 #include <ogdf/basic/Graph.h>
 #include <ogdf/basic/GraphAttributes.h>
@@ -86,7 +89,9 @@ public:
     ~AlgorithmCpp() {
     }
 
-    virtual int run(void) = 0;
+    virtual int run(const Field &field, VehicleConfiguration C, double r,
+        bool returnToInitial, Graph &G, GraphAttributes &GA, List<node> &Tour,
+        List<edge> &Edges, NodeArray<double> &Headings, double &cost) = 0;
 };
 
 

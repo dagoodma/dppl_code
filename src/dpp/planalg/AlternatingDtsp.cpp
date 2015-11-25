@@ -140,7 +140,6 @@ int AlternatingDtsp::run(Graph &G, GraphAttributes &GA, double x, double r,
     Logger::logDebug(DPP_LOGGER_VERBOSE_3) << printGraph(G, GA) << std::endl;
 
     // Generate temporary TSP and PAR files
-    Headings(G.firstNode()) = x;
     string problemComment("Euclidean TSP problem with ");
     problemComment += to_string(n) + " nodes.";
     string problemName("prDubinsScenario");

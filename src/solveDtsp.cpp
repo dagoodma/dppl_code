@@ -177,7 +177,10 @@ int main(int argc, char *argv[]) {
     p.turnRadius(r);
     p.returnToInitial(!noReturn);
 
-    p.solve();
+    if (!p.solve()) {
+        std::cerr << "Failed to find solution." << std::endl;
+        return FAILURE;
+    }
 
     // Results. Must use graph pointer.
     ogdf::Graph *G = p.graphPtr();

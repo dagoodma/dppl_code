@@ -106,7 +106,6 @@ int RandomizedDtsp::run(Graph &G, GraphAttributes &GA, double x, double r,
     Logger::logDebug(DPP_LOGGER_VERBOSE_2) << "Found " << n << " nodes, and " << m << " edges." << std::endl;
 
     // Generate temporary TSP and PAR files
-    Headings(G.firstNode()) = x;
     string problemComment("Asymmetric TSP problem with ");
     problemComment += to_string(n) + " nodes.";
     string problemName("prDubinsScenario");

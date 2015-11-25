@@ -13,14 +13,29 @@
 
 namespace dpp {
 
+int CoverageWaypointPlanner::addPolygonVertices(VertexList list) {
+    DPP_ASSERT(list.size() > 0);
+    //m_G.clear();
+    m_waypointList.clear();
+    m_haveSolution = false;
+    int n = 0;
+
+    Logger::logDebug(DPP_LOGGER_VERBOSE_2) << "Adding list of vertices: " << std::endl;
+    for (const auto& v : list) {
+        addPolygonVertex(v);
+        n++;
+    }
+
+    return vertexCount();
+}
 
 void CoverageWaypointPlanner::addPolygonVertex(Vertex v) {
 	ogdf::DPoint p(v.x, v.y);
 	Logger::logDebug(DPP_LOGGER_VERBOSE_2) << "Adding point (" << p.m_x << ", "
 		<< p.m_y << ") to polygon." << std::endl;
-	if (!m_polygon.containsPoint(p)) {
+	//if (!m_polygon.containsPoint(p)) {
 		m_polygon.pushBack(p);
-    }
+    //}
 }
 
 /**
@@ -30,11 +45,16 @@ void CoverageWaypointPlanner::addPolygonVertex(Vertex v) {
  */
 bool CoverageWaypointPlanner::planCoverageWaypoints(void) {
 	DPP_ASSERT(vertexCount() >= 3);
-	Logger::logDebug() << "Here!";
+	Logger::logDebug(DPP_LOGGER_VERBOSE_1) << "Planning coverage waypoint path for polygon with "
+        << vertexCount() << " vertices." << std::endl;
 
-	if(!solveAsDtsp()) {
-		return false;
-	}
+	//if(!solveAsDtsp()) {
+	//	return false;
+	//}
+    if(!DubinsSensorPathPlanner::solve()) {
+        Logger::logError() << "Failed to find solution." << std::endl;
+        return false;
+    }
 
 	// Build waypoint list from tour
     Logger::logDebug(DPP_LOGGER_VERBOSE_2) << "Building waypoint list:" << std::endl;

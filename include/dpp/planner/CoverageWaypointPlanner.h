@@ -7,12 +7,14 @@
 namespace dpp {
 
 typedef Waypoint Vertex;
+typedef WaypointList VertexList;
 
 class CoverageWaypointPlanner : private DubinsSensorPathPlanner {
 public:
     using DubinsSensorPathPlanner::initialConfiguration;
     using DubinsSensorPathPlanner::sensorWidth;
     using DubinsPathPlanner::turnRadius;
+    using DubinsSensorPathPlanner::algorithm;
     using PathPlanner::algorithmName;
     using PathPlanner::waypointCount;
     using PathPlanner::cost;
@@ -33,16 +35,14 @@ public:
     bool planCoverageWaypoints(void);
 
     WaypointList waypointList(void) {
+        DPP_ASSERT(haveSolution());
         return m_waypointList;
-    }
-
-    void initialConfiguration(double x, double y, double heading) {
-        VehicleConfiguration C(x, y, heading);
-        DubinsSensorPathPlanner::initialConfiguration(C);
     }
 
     // FIXME move some of these functions up to the DubinsSensorPathPlanner
     void addPolygonVertex(Vertex v);
+
+    int addPolygonVertices(VertexList list);
 
     int vertexCount(void) {
         return m_polygon.size();

@@ -36,9 +36,9 @@ void DubinsSensorPathPlanner::polygon(List<DPoint> points) {
  */
 void DubinsSensorPathPlanner::algorithm(CppPlanningAlgorithm algId) {
     switch (algId) {
-        case FIELD_TRACKS:
-            m_algorithm.reset(new FieldTracksCpp());
-            Logger::logDebug() << "Set CPP algorithm to FIELD_TRACKS." << std::endl;
+        case BOUSTROPHEDON:
+            m_algorithm.reset(new BoustrophedonCpp());
+            Logger::logDebug() << "Set CPP algorithm to BOUSTROPHEDON." << std::endl;
             break;
         default:
             DPP_ASSERT(0 && "Unknown planning algorithm");
@@ -65,12 +65,13 @@ bool DubinsSensorPathPlanner::solveAsDtsp(DtspPlanningAlgorithm algId) {
         Logger::logInfo(DPP_LOGGER_VERBOSE_1) << "Solving coverage problem with "
         << p.algorithmName() << " DTSP algorithm." << std::endl;
         
-        // Clear and add origin to graph
+        // Clear and add origin to graph with heading
         m_G.clear();
         ogdf::node nodeStart = m_G.newNode();
         m_GA.x(nodeStart) = m_initialConfig.x();
         m_GA.y(nodeStart) = m_initialConfig.y();
         m_GA.idNode(nodeStart) = 1;
+        m_Headings(m_G.firstNode()) = m_initialConfig.heading();
 
         // Construct field and grid polygon by sensor width,
         // building a graph with centroids as nodes
@@ -96,13 +97,28 @@ bool DubinsSensorPathPlanner::solve(void) {
     DPP_ASSERT(m_polygon.size() >= 3);
     m_haveSolution = false;
 
+    // Clear and add origin to graph with heading
+    m_G.clear();
+    ogdf::node nodeStart = m_G.newNode();
+    m_GA.x(nodeStart) = m_initialConfig.x();
+    m_GA.y(nodeStart) = m_initialConfig.y();
+    m_GA.idNode(nodeStart) = 1;
+    m_Headings(m_G.firstNode()) = m_initialConfig.heading();
+
     Logger::logInfo(DPP_LOGGER_VERBOSE_1) << "Solving coverage problem with "
         << m_algorithm->name() << " " << m_algorithm->typeText() << " algorithm." << std::endl;
     try {
+        // Generate the field
+        Field field(m_polygon, m_sensorWidth);
+        if (!field.isConvex()) {
+            throw std::domain_error("Non-convex polygons not yet supported.");
+        }
+
+        // Call the algorithm
         AlgorithmCpp *alg = dynamic_cast<AlgorithmCpp*>(m_algorithm.get());
-        if (alg->run() == SUCCESS) {
-            //m_haveSolution = true;
-            m_haveSolution = false; // not implemented
+        if (alg->run(field, m_initialConfig, m_turnRadius, m_returnToInitial,
+            m_G, m_GA, m_Tour, m_Edges, m_Headings, m_cost) == SUCCESS) {
+            m_haveSolution = true;
         }
     } catch(std::exception &e) {
         Logger::logError() << "An exception occured: " << e.what() << std::endl;
