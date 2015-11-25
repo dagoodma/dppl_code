@@ -71,7 +71,7 @@ void Field::computeBoundingBox(void) {
 /**
  * Test if polygon is defined with points counter-clockwise.
  */
-bool Field::isCcw(void) {
+bool Field::isCcw(void) const {
     return m_poly.counterclock(); // FIXME check for ccw
 }
 
@@ -81,7 +81,7 @@ bool Field::isCcw(void) {
  * @see http://stackoverflow.com/questions/471962/how-do-determine-if-a-polygon-is-complex-convex-nonconvex
  * FIXME look into using DSegment.det(), or Eigen cross product
  */
-bool Field::isConvex(void) {
+bool Field::isConvex(void) const {
 	DPP_ASSERT(m_poly.size() > 2);
 
     if (m_poly.size() <= 3)
@@ -90,7 +90,7 @@ bool Field::isConvex(void) {
     bool sign = false, first = true,
         result = true;
 
-    PolyVertexIterator listIter;
+    PolyVertexConstIterator listIter;
     for ( listIter = m_poly.begin(); listIter != m_poly.end()
         && listIter.succ() != m_poly.end(); listIter++ ) {
         DSegment u = m_poly.segment(listIter);
@@ -114,8 +114,9 @@ bool Field::isConvex(void) {
             }
         }
     }
-    if (!sign != m_poly.counterclock()) {
-        Logger::logWarn() << "Polygon " << ((m_poly.counterclock())? "CCW" : "CW")
+    bool polySign = !((DPolygon)m_poly).counterclock(); // sign = 1 means CW
+    if (sign != polySign) {
+        Logger::logWarn() << "Polygon " << ((!polySign)? "CCW" : "CW")
             << " was expected, but sign did not match" << std::endl;
     }
     return result;
@@ -128,13 +129,13 @@ bool Field::isConvex(void) {
  * @return Success (=0) or error code.
  * @see Algorithm 1, page 20 of Xin Yu dissertation 2015
  */
-int Field::findMinimumWidth(double &width, double &angle) {
+int Field::findMinimumWidth(double &width, double &angle) const {
 	DPP_ASSERT(m_poly.size() > 2);
     DPP_ASSERT(isConvex());
     // TODO delete middle vertices of any collinear sequence of three vertices
     //      see DPolygon::normalize()
-    PolyVertexIterator va = m_minYVertex; //findVertexWithMinY();
-    PolyVertexIterator vb = m_maxYVertex; //findVertexWithMaxY();
+    PolyVertexConstIterator va(m_minYVertex); //findVertexWithMinY();
+    PolyVertexConstIterator vb(m_maxYVertex); //findVertexWithMaxY();
 
     /*
     Logger::logDebug(DPP_LOGGER_VERBOSE_2) << "Finding min width of polygon: " << std::endl
@@ -225,7 +226,7 @@ int Field::findMinimumWidth(double &width, double &angle) {
  * @remark Uses field's coverageWidth to space the tracks apart.
  * @return Number of field tracks generated.
  */
-int Field::generateFieldTracks(FieldTrackList &tracks) {
+int Field::generateFieldTracks(FieldTrackList &tracks) const {
 	//DPP_ASSERT(0 <= angle && angle < 2*M_PI);
 	tracks.clear();
 
@@ -322,7 +323,7 @@ bool findPolySegmentWithAngle(double angle, const DPolygon *poly, DSegment &seg,
  * @param G     Graph to add nodes to.
  * @param GA    Attributes of the graph.
  */
-int Field::addNodesFromGrid(ogdf::Graph &G, ogdf::GraphAttributes &GA) {
+int Field::addNodesFromGrid(ogdf::Graph &G, ogdf::GraphAttributes &GA) const {
 	DPP_ASSERT(m_poly.size() > 2);
 
     // Get bounding rectangle
@@ -357,7 +358,7 @@ int Field::addNodesFromGrid(ogdf::Graph &G, ogdf::GraphAttributes &GA) {
  * @param[in] f field to find intersections with
  * @param[out] t
  */
-bool FieldTrackSweepLine::intersectingTrack(const Field *field, FieldTrack &track) {
+bool FieldTrackSweepLine::intersectingTrack(const Field *field, FieldTrack &track) const {
 	ogdf::List<DPoint> inter; // intersection points
 	int result = false;
 

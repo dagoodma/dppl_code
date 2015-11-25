@@ -214,6 +214,83 @@ TEST(HeadingBetweenTest, Various) {
     EXPECT_DOUBLE_EQ(dpp::degToRad(0), dpp::headingBetween(v,u));
 }
 
+// --------------------- polarToCartesian() -------------------
+const double expectedC = 0.707106781186547;
+
+TEST(PolarToCartesianTest, AtOrigin) {
+    DPoint expectedP(0,0);
+    {
+        DPoint actualP = dpp::polarToCartesian(0,0);
+
+        EXPECT_EQ(expectedP, actualP);
+    }
+    {
+        DPoint actualP = dpp::polarToCartesian(270,0);
+
+        EXPECT_EQ(expectedP, actualP);
+    }
+}
+
+TEST(PolarToCartesianTest, QuadrantI) {
+    {
+        DPoint expectedP(1,0);
+        DPoint actualP = dpp::polarToCartesian(0,1);
+
+        EXPECT_EQ(expectedP, actualP);
+    }
+    {
+        DPoint expectedP(expectedC,expectedC);
+        DPoint actualP = dpp::polarToCartesian(dpp::degToRad(45),1);
+
+        EXPECT_EQ(expectedP, actualP);
+    }
+    {
+        DPoint expectedP(0,1);
+        DPoint actualP = dpp::polarToCartesian(dpp::degToRad(90),1);
+
+        EXPECT_EQ(expectedP, actualP);
+    }
+}
+
+TEST(PolarToCartesianTest, QuadrantII) {
+    {
+        DPoint expectedP(-expectedC,expectedC);
+        DPoint actualP = dpp::polarToCartesian(dpp::degToRad(135),1);
+
+        EXPECT_EQ(expectedP, actualP);
+    }
+    {
+        DPoint expectedP(-1,0);
+        DPoint actualP = dpp::polarToCartesian(dpp::degToRad(180),1);
+
+        EXPECT_EQ(expectedP, actualP);
+    }
+}
+
+TEST(PolarToCartesianTest, QuadrantIII) {
+    {
+        DPoint expectedP(-expectedC,-expectedC);
+        DPoint actualP = dpp::polarToCartesian(dpp::degToRad(225),1);
+
+        EXPECT_EQ(expectedP, actualP);
+    }
+    {
+        DPoint expectedP(0,-2);
+        DPoint actualP = dpp::polarToCartesian(dpp::degToRad(270),2);
+
+        EXPECT_EQ(expectedP, actualP);
+    }
+}
+
+TEST(PolarToCartesianTest, QuadrantIV) {
+    {
+        DPoint expectedP(expectedC,-expectedC);
+        DPoint actualP = dpp::polarToCartesian(dpp::degToRad(315),1);
+
+        EXPECT_EQ(expectedP, actualP);
+    }
+}
+
 // --------------------- clearEdges() -------------------
 using ogdf::node;
 using ogdf::edge;

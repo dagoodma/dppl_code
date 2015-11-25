@@ -39,7 +39,7 @@ public:
     ~Field()
     { }
 
-    double coverageWidth(void) {
+    double coverageWidth(void) const {
         return m_coverageWidth;
     }
 
@@ -47,9 +47,9 @@ public:
         m_coverageWidth = e;
     }
 
-    bool isCcw(void);
+    bool isCcw(void) const;
 
-    bool isConvex(void);
+    bool isConvex(void) const;
 
     PolyVertexIterator getVertexWithMinX(void) {
         return m_minXVertex;
@@ -75,11 +75,11 @@ public:
         return const_cast<const DPolygon*>(&m_poly);
     }
 
-    int findMinimumWidth(double &width, double &angle);
+    int findMinimumWidth(double &width, double &angle) const;
 
-    int addNodesFromGrid(ogdf::Graph &G, ogdf::GraphAttributes &GA);
+    int addNodesFromGrid(ogdf::Graph &G, ogdf::GraphAttributes &GA) const;
     
-    int generateFieldTracks(FieldTrackList &tracks);
+    int generateFieldTracks(FieldTrackList &tracks) const;
 
     friend ostream& operator<<(ostream& os, const Field& f);
         
@@ -108,7 +108,7 @@ public:
         : Line2d(s)
     { }
 
-    bool intersectingTrack(const Field *field, FieldTrack &track);
+    bool intersectingTrack(const Field *field, FieldTrack &track) const;
 
 private:
 };

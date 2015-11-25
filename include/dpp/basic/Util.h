@@ -128,7 +128,8 @@ inline double headingBetween(DPoint p, DPoint q) {
         psi = atan((y2 - y1)/(x1 - x2)) + 3.0*M_PI/2.0;
     }
     else {
-        throw std::out_of_range ("uncovered quadrant"); 
+        // This shouldn't happen
+        throw std::out_of_range ("Uncovered heading case"); 
     }
 
     return psi;
@@ -149,6 +150,30 @@ inline double headingBetween(Vector3d u, Vector3d v) {
     Vector2d u2(u[0], u[1]),
         v2(v[0], v[1]);
     return headingBetween(u2,v2);
+}
+
+inline DPoint polarToCartesian(double theta, double r) {
+    theta = wrapAngle(theta);
+    double dx = 0, dy = 0;
+
+    if (theta <= M_PI/2) {
+        dx = r*cos(theta);
+        dy = r*sin(theta);
+    }
+    else if (theta <= M_PI) {
+        dx = -r*sin(theta - M_PI/2);
+        dy = r*cos(theta - M_PI/2);
+    }
+    else if (theta <= 3*M_PI/2) {
+        dx = -r*cos(theta - M_PI);
+        dy = -r*sin(theta - M_PI);
+    }
+    else {
+        dx = r*sin(theta - 3*M_PI/2);
+        dy = -r*cos(theta - 3*M_PI/2);
+    }
+
+    return DPoint(dx,dy);
 }
 
 /**
@@ -419,7 +444,7 @@ public:
     friend ostream& operator<<(ostream& os, const Line2d& line);
 
     // Length of a line is infinite.
-    double length(void) {
+    double length(void) const {
         return std::numeric_limits<double>::max();
     }
 
@@ -428,7 +453,7 @@ public:
      * @return Angle of the line, where 0 <= theta < pi
      * @remark Different than the angle of a DLine, which has endpoints.
      */
-     double angle(void) {
+     double angle(void) const {
         if (isVertical()) {
             return M_PI/2; // slope is infinite
         }
@@ -439,7 +464,7 @@ public:
     /**
      * Returns true if the point lies on the line.
      */
-    bool contains(DPoint p) {
+    bool contains(DPoint p) const {
         if (!isVertical()) {
             return DIsEqual(m_c, m_a * p.m_x + m_b * p.m_y);
         }
@@ -467,24 +492,8 @@ public:
         }
 
         //theta = wrapAngle(theta);
-        double dx = 0, dy = 0;
-
-        if (theta <= M_PI/2) {
-            dx = d*cos(theta);
-            dy = d*sin(theta);
-        }
-        else if (theta <= M_PI) {
-            dx = -d*sin(theta - M_PI/2);
-            dy = d*cos(theta - M_PI/2);
-        }
-        else if (theta <= 3*M_PI/2) {
-            dx = -d*cos(theta - M_PI);
-            dy = -d*sin(theta - M_PI);
-        }
-        else {
-            dx = d*sin(theta - 3*M_PI/2);
-            dy = -d*cos(theta - 3*M_PI/2);
-        }
+        DPoint dp = polarToCartesian(theta,d);
+        double dx = dp.m_x, dy = dp.m_y;
 
         if (!isVertical()) {
             m_c += dy + m_a*dx;
@@ -502,7 +511,7 @@ public:
      * @param[out] inters Point to hold intersection of lines.
      * @return True if they intersect and are not identical.
      */
-    bool intersection(Line2d line, DPoint &inters) {
+    bool intersection(Line2d line, DPoint &inters) const {
         bool result = false;
         // Will this work if either is infinite?
         if (!DIsEqual(slope(), line.slope())) {
@@ -533,7 +542,7 @@ public:
      * @return True if line segment intersects this line, and the segment is not
      *      completey on-top of this line (infinite intersections).
      */
-    bool intersection(DSegment s, DPoint &inters) {
+    bool intersection(DSegment s, DPoint &inters) const {
         Line2d line(s);
         DPoint p;
         if (intersection(line, p)) {

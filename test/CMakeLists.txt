@@ -21,12 +21,13 @@ add_subdirectory(${GMOCK_DIR} ${CMAKE_BINARY_DIR}/gmock)
 include_directories(SYSTEM ${GMOCK_DIR}/../googletest/include
                            ${GMOCK_DIR}/include)
 
+
 ################################
 # Extra Dependencies
 ################################
 # DubinsCurves
-link_directories( ${CMAKE_SOURCE_DIR}/lib/dubins-curves )
-include_directories( ${CMAKE_SOURCE_DIR}/lib/dubins-curves/include )
+#link_directories( ${CMAKE_SOURCE_DIR}/lib/dubins-curves )
+#include_directories( ${CMAKE_SOURCE_DIR}/lib/dubins-curves/include )
 
 # DPP
 include_directories( ${CMAKE_SOURCE_DIR}/test )
@@ -37,7 +38,7 @@ include_directories( ${CMAKE_SOURCE_DIR}/test )
 
 # dpp/basic/Logger
 add_executable(Logger_test basic/Logger_test.cpp)
-target_link_libraries(Logger_test gmock_main DPP )
+target_link_libraries(Logger_test gmock_main DPP)
 add_test(BasicTests Logger_test)
 
 # dpp/basic/Util
@@ -80,3 +81,7 @@ add_executable(WaypointSequencePlanner_test planner/WaypointSequencePlanner_test
 target_link_libraries(WaypointSequencePlanner_test gmock_main OGDF COIN DPP)
 add_test(PlannerTests WaypointSequencePlanner_test)
 
+# dpp/planner/CoverageWaypointPlanner
+add_executable(CoverageWaypointPlanner_test planner/CoverageWaypointPlanner_test.cpp)
+target_link_libraries(CoverageWaypointPlanner_test gmock_main OGDF COIN DPP)
+add_test(PlannerTests CoverageWaypointPlanner_test)

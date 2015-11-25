@@ -460,8 +460,8 @@ TEST(FieldGenerateTracksTest, RightTriangle) {
 		dpp::FieldTrack(DPoint(-10,0.100505063), DPoint(-9.89949494,0))
 	});
 	dpp::FieldTrackList actualTracks;
-	f.generateFieldTracks(actualTracks);
 
+	EXPECT_GT(f.generateFieldTracks(actualTracks), 0);
 	EXPECT_TRUE(expectedTracks == actualTracks);
 }
 
@@ -472,8 +472,8 @@ TEST(FieldGenerateTracksTest, IsoscelesTriangle) {
 		dpp::FieldTrack(DPoint(3,3), DPoint(5,3))
 	});
 	dpp::FieldTrackList actualTracks;
-	f.generateFieldTracks(actualTracks);
 
+	EXPECT_GT(f.generateFieldTracks(actualTracks), 0);
 	EXPECT_TRUE(expectedTracks == actualTracks);
 }
 
@@ -488,8 +488,8 @@ TEST(FieldGenerateTracksTest, Square) {
 		dpp::FieldTrack(DPoint(-10,-9), DPoint(0,-9))
 	});
 	dpp::FieldTrackList actualTracks;
-	f.generateFieldTracks(actualTracks);
 
+	EXPECT_GT(f.generateFieldTracks(actualTracks), 0);
 	EXPECT_TRUE(expectedTracks == actualTracks);
 }
 
@@ -504,8 +504,8 @@ TEST(FieldGenerateTracksTest, Rectangle) {
 		dpp::FieldTrack(DPoint(-1,0), DPoint(-1,-20))
 	});
 	dpp::FieldTrackList actualTracks;
-	f.generateFieldTracks(actualTracks);
 
+	EXPECT_GT(f.generateFieldTracks(actualTracks), 0);
 	EXPECT_TRUE(expectedTracks == actualTracks);
 }
 
@@ -520,8 +520,8 @@ TEST(FieldGenerateTracksTest, Trapezoid) {
 		dpp::FieldTrack(DPoint(-1,1), DPoint(-1,-11))
 	});
 	dpp::FieldTrackList actualTracks;
-	f.generateFieldTracks(actualTracks);
 
+	EXPECT_GT(f.generateFieldTracks(actualTracks), 0);
 	EXPECT_TRUE(expectedTracks == actualTracks);
 }
 
@@ -539,7 +539,7 @@ TEST(FieldGenerateTracksTest, IsoscelesTrapezoid) {
 		dpp::FieldTrack(DPoint(-8.166666666,1), DPoint(0.8333333,1))
 	});
 	dpp::FieldTrackList actualTracks;
-	f.generateFieldTracks(actualTracks);
 
+	EXPECT_GT(f.generateFieldTracks(actualTracks), 0);
 	EXPECT_TRUE(expectedTracks == actualTracks);
 }
