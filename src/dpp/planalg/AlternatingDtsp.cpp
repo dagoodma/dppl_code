@@ -25,78 +25,69 @@
 
 namespace dpp {
 
+double headingBetweenNodes(Graph &G, GraphAttributes &GA, node u, node v) {
+    Vector2d uv(GA.x(u), GA.y(u));
+    Vector2d vv(GA.x(v), GA.y(v));
+    return headingBetween(uv, vv);
+}
+
 /**
  * Applies the alternating algorithm to the given tour by finding heading orientations
  * given the Dubins vehicle turning radius r. Modifies heading.
  */
 void alternatingAlgorithm(Graph &G, GraphAttributes &GA, List<node> &Tour,
     NodeArray<double> &Headings, double x, double r) {
-    ListIterator<node> iter;
-    int i = 1;
-    node nodeStart = G.firstNode();
+    Headings.fill(0.0); // clear headings
+    ListIterator<node> iter = Tour.begin();
+    node origin = *iter++;
+    Headings[origin] = x;
+    int n = Tour.size() - (Tour.back() == Tour.front()); // do not include origin twice
+    Logger::logDebug(DPP_LOGGER_VERBOSE_2) << "Set origin node " << GA.idNode(origin)
+            << " (" << GA.x(origin) << ", " << GA.y(origin) << "): " << x << " rad" <<std::endl;
+
+    // Second node
+    node u = *(iter++);
+    node v = *iter;
+    Headings[u] = headingBetweenNodes(G,GA,u,v);
 
     Logger::logDebug(DPP_LOGGER_VERBOSE_2) << "Tour: " << std::endl;
+    Logger::logDebug(DPP_LOGGER_VERBOSE_2) << "   Node " << GA.idNode(u)
+            << " (" << GA.x(u) << ", " << GA.y(u) << "): " << Headings[u] << " rad" <<std::endl;
 
-    // We don't want to iterate over the last point in the tour, since we're
-    // looking at each node's successor. Hence: i < tour.size()
-    node u_last;
-    for ( iter = Tour.begin(); (i < Tour.size() && iter != Tour.end()); iter++ ) {
-        node u = *iter, v = *(iter.succ());
+    // Start at second node and go until second to last (using successor).
+    // Offset to skip origin with predefined heading, since i=2, but node is 3
+    //for ( /* iter is set */ ; (i < (Tour.size() - 1) && iter != Tour.end()); iter++ ) {
+    for (int i = 2; i < n - 1;  i++, iter++) {
+        u = *iter;
 
         Logger::logDebug(DPP_LOGGER_VERBOSE_2) << "   Node " << GA.idNode(u)
             << " (" << GA.x(u) << ", " << GA.y(u) << "): ";
 
-        #ifdef USE_INITIAL_HEADING
-        // Use initial heading if we're at the starting node
-        if (u == nodeStart) {
-            Headings[u] = x;
-        }
-        else {
-        #endif
-
         // If odd, find the heading to the next node
         if (fmod(i,2) != 0) {
-            Vector2d uv(GA.x(u), GA.y(u));
-            Vector2d vv(GA.x(v), GA.y(v));
-            Headings[u] = headingBetween(uv, vv);
+            v = *(iter.succ());
+            Headings[u] = headingBetweenNodes(G,GA,u,v);
         }
-        // If even,
+        // If even, use predecessor heading
         else {
-            node w = *(iter.pred());
-            #ifdef USE_INITIAL_HEADING
-            if (u_last == nodeStart)
-            {
-                // Use heading from initial position to current
-                Vector2d uv(GA.x(nodeStart), GA.y(nodeStart));
-                Vector2d vv(GA.x(u), GA.y(u));
-                Headings[u] = headingBetween(uv, vv);
-            }
-            else 
-            #endif
-            {
-                // Use heading of previous node
-                Headings[u] = Headings[u_last];
-            }
+            v = *(iter.pred());
+            Headings[u] = Headings[v];
         }
-
-        #ifdef USE_INITIAL_HEADING
-        }   
-        #endif
 
         Logger::logDebug(DPP_LOGGER_VERBOSE_2) << Headings[u] << " rad" << std::endl;
-        i++;
-        u_last = u;
     }
-
-    // Set heading of the last node in the tour to it's predecessor's heading
-    // if it's not the first node.
-    if (Tour.back() != Tour.front()) {
-        iter = Tour.rbegin();
-        node u = *iter;
-        iter--; // reverse iterator decrements
-        node v = *iter;
+    // Handle the last node
+    u = *iter; // iter should point to last node (not origin) in tour
+    if (fmod(n - 1, 2) != 0) { // odd, use a_n to a_0
+        Headings[u] = headingBetweenNodes(G,GA,u,origin);
+    }
+    else { // even, use predecessor's heading
+        v = *(iter.pred());
         Headings[u] = Headings[v];
     }
+    Logger::logDebug(DPP_LOGGER_VERBOSE_2) << "Set last node " << GA.idNode(u)
+        << " (" << GA.x(u) << ", " << GA.y(u) << "): " << Headings[u] << " rad" <<std::endl;
+
 }
 
 /**

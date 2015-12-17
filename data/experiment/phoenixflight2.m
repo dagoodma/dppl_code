@@ -2,13 +2,13 @@ close all;
 clear all;
 
 %% Parameters
-localWaypointFilename='2015.11.07_east4wp_local.csv';
+%localWaypointFilename='2015.11.07_east4wp_local.csv';
 dataLogFilename='2015.11.18_phoenixflight2_gps.csv';
 
 origin = [36.988505,-122.0509133,0]; % from raw telemetry data
 initialPosition = [0, 0];
 initialHeading = 0.0; % rad
-[dataLocal] = csvread(localWaypointFilename, 1);
+%[dataLocal] = csvread(localWaypointFilename, 1);
 V= [...
 		-57.8852 ,140.524;...
 		-13.965 ,-13.3296;...

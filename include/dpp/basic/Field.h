@@ -47,7 +47,7 @@ public:
         m_coverageWidth = e;
     }
 
-    bool isCcw(void) const;
+    bool isCcw(void);
 
     bool isConvex(void) const;
 

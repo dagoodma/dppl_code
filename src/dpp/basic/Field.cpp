@@ -71,7 +71,7 @@ void Field::computeBoundingBox(void) {
 /**
  * Test if polygon is defined with points counter-clockwise.
  */
-bool Field::isCcw(void) const {
+bool Field::isCcw(void) {
     return m_poly.counterclock(); // FIXME check for ccw
 }
 

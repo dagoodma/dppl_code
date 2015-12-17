@@ -98,8 +98,8 @@ int main(int argc, char *argv[]) {
         options.add_options()
             ("d,debug", "Enable debugging messages",cxxopts::value<bool>(debug))
             ("h,help", "Print this message")
-            ("a,algorithm", "Algorithm for Dtsp (nearest,alternating,randomized =default)",
-                cxxopts::value<std::string>()->default_value("randomized"), "DTSP_ALGORITHM")
+            ("a,algorithm", "Algorithm for Dtsp (nearest,randomized,alternating =default)",
+                cxxopts::value<std::string>()->default_value("alternating"), "DTSP_ALGORITHM")
             ("r,noreturn", "Disables returning to initial configuration", cxxopts::value<bool>(noReturn))
             ("v,verbose", "Prints increasingly verbose messages", cxxopts::value<int>(verbose));
 
