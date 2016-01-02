@@ -1,6 +1,6 @@
 [submodule "matlab"]
 	path = matlab
-	url = git@github.com:dagoodma/dpp_matlab.git
+	url = git@github.com:dagoodma/dppl_matlab.git
 	branch = master
 [submodule "test/gtest"]
 	path = test/gtest
