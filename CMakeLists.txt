@@ -50,7 +50,7 @@ set( OGDF_LIBRARIES OGDF COIN )
 ################################
 # LKH Binary
 ################################
-find_program(LKH_EXECUTABLE LKH . PATHS: lib/LKH )
+find_program(LKH_EXECUTABLE LKH . PATHS: lib/LKH lib/LKH-2.0.7 )
 message("-- Found LKH binary: " ${LKH_EXECUTABLE})
 
 if ( LKH_EXECUTABLE STREQUAL "LKH_EXECUTABLE-NOTFOUND" )
