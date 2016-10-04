@@ -3,7 +3,7 @@
 
 * Website:  http://dagoodma.github.io/dppl_code
  
-* Code: https://github.com/dagoodma/dppl_matlab
+* Code: https://github.com/dagoodma/dppl_code
 
 * QGC Interface Code: https://github.com/dagoodma/qgroundcontrol/tree/dpp_addon_dtspascpp
 
