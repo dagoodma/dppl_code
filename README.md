@@ -38,7 +38,7 @@ Here is a list of toolchain requirements (mostly imposed by OGDF):
 
 This section explains how to obtain everything needed to use DPPL.
 
-First, clone this Git repo recursively to download all of the submodules (there's a lot of dependencies that are grabbed this way--see the (Getting Started)[#getting-started [.gitmodules](.gitmodules) file for a full list, and [lib/README.md](lib/README.md) for additional information about dependencies):
+First, clone this Git repo recursively to download all of the submodules (there's a lot of dependencies that are grabbed this way--see the [.gitmodules](.gitmodules) file for the list of submodules, and [lib/README.md](lib/README.md) for additional information about dependencies):
 
     git clone --recursive https://github.com/dagoodma/dppl_code.git
 
@@ -49,7 +49,7 @@ If you've already cloned this repo but you still need to download the submodules
 
 Once you have downloaded DPPL and all of the submodules, you will still need to manually download and compile [LKH 2.0.7](http://www.akira.ruc.dk/~keld/research/LKH/LKH-2.0.7.tgz) and [Eigen3](http://eigen.tuxfamily.org/index.php?title=Main_Page)--a header-only library that should be available through your system's package manager (on Mac OS X, we recommend [Homebrew](http://brew.sh/index.html): `brew install eigen`). Extract and compile LKH into `lib/LKH` or `lib/LKH-2.0.7`. You will also need to compile OGDF and Dubins-Curves (requires [SCons](http://scons.org/), which should be available through your system's package manager). 
 
-Now that you have DPPL and all required dependencies , you are ready to compile DPPL itself. We use [CMake](https://cmake.org/) as our build system, thus you will want to create a new folder (we'll create a `build/` folder inside our local working repo), change into that folder, then run `cmake <path-to-dppl>` and `make`:
+Now that you have DPPL and all required dependencies, you are ready to compile DPPL itself. We use [CMake](https://cmake.org/) as our build system. Thus you will want to create a new folder (we'll create a `build/` folder inside our local working repo), change into that folder, run `cmake <path-to-dppl>`, and `make`:
 
     mkdir build
     cd build
